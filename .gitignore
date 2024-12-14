@@ -1,0 +1,42 @@
+# Node.js
+frontend/grower_portal_frontend/node_modules/
+frontend/grower_portal_frontend/build/
+frontend/grower_portal_frontend/dist/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+frontend/grower_portal_frontend/package-lock.json
+yarn.lock
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+env/
+venv/
+ENV/
+.Python
+pip-log.txt
+*.sqlite3
+
+# Django
+db.sqlite3
+*.log
+*.pot
+*.py[cod]
+*~
+!.env
+.DS_Store
+
+# VS Code
+.vscode/
+
+# IDE Specific
+.idea/
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db

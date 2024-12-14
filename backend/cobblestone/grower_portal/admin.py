@@ -1,0 +1,60 @@
+from django.contrib import admin
+from .models import Grower, Ranch, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors
+
+
+@admin.register(Commodity)
+class CommodityAdmin(admin.ModelAdmin):
+    list_display = ("name", "avgCtnPrice", "stdCtnCost", "pricePerPound", "standardCtnWeight", "packingCharge", "profitPerBag", "promo")
+    search_fields = ("name",)
+
+@admin.register(Grower)
+class GrowerAdmin(admin.ModelAdmin):
+    list_display = ("name", "grower_contact_email", "grower_contact_phone")
+    search_fields = ("name",)
+
+
+@admin.register(Ranch)
+class RanchAdmin(admin.ModelAdmin):
+    list_display = ("name", "grower", "location")
+    search_fields = ("name", "grower__name")
+    list_filter = ("grower",)
+
+
+@admin.register(Block)
+class BlockAdmin(admin.ModelAdmin):
+    list_display = ("name", "ranch", "size", "planted_commodity", "planted_variety")
+    search_fields = ("name", "ranch__name", "planted_commodity__name")
+    list_filter = ("ranch", "planted_commodity")
+
+
+@admin.register(PlannedHarvest)
+class PlannedHarvestAdmin(admin.ModelAdmin):
+    list_display = ("name", "grower_block", "planned_bins", "harvest_date")  # Corrected 'block' to 'grower_block'
+    search_fields = ("name", "grower_block__name")
+    list_filter = ("harvest_date",)
+
+@admin.register(ProductionRuns)
+class ProductionRunsAdmin(admin.ModelAdmin):
+    list_display = ("name", "grower_block", "bins")  # Corrected 'block' to 'grower_block'
+    search_fields = ("name", "grower_block__name")
+
+
+@admin.register(Receivings)
+class ReceivingsAdmin(admin.ModelAdmin):
+    list_display = ("receipt_id", "harvest__name", "qty_received")  # Corrected 'block' to 'grower_block'
+    search_fields = ("receipt_id", "harvest__name")
+
+@admin.register(Varieties)
+class VarietiesAdmin(admin.ModelAdmin):
+    list_display = ('name', 'commodity')
+    search_fields = ('name',)
+
+@admin.register(LaborContractors)
+class LaborContractorsAdmin(admin.ModelAdmin):
+    list_display = ('name', 'primary_contact_name', 'primary_contact_phone', 'office_phone', 'mailing_address')
+    search_fields = ('name',)
+
+@admin.register(TruckingContractors)
+class TruckingContractorsAdmin(admin.ModelAdmin):
+    list_display = ('name', 'primary_contact_name', 'primary_contact_phone', 'office_phone', 'mailing_address')
+    search_fields = ('name',)
