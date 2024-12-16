@@ -29,10 +29,8 @@ class BlockSerializer(serializers.ModelSerializer):
     ranch_id = serializers.PrimaryKeyRelatedField(
         queryset=Ranch.objects.all(), write_only=True, source='ranch'
     )
-    crop = CommoditySerializer(read_only=True)
-    crop_id = serializers.PrimaryKeyRelatedField(
-        queryset=Commodity.objects.all(), write_only=True, source='crop'
-    )
+    planted_commodity = serializers.PrimaryKeyRelatedField(
+        queryset=Commodity.objects.all(), write_only=True)
 
     class Meta:
         model = Block

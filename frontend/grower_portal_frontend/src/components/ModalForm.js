@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, TextField, Box, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Modal, TextField, Box, Button, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Checkbox } from '@mui/material';
 
-const ModalForm = ({ open, onClose, onSave, initialData, fields }) => {
+const ModalForm = ({ open, onClose, onSave, initialData, fields, modalType }) => {
     const [formData, setFormData] = useState({});
 
     // Initialize form data when initialData changes
@@ -10,8 +10,12 @@ const ModalForm = ({ open, onClose, onSave, initialData, fields }) => {
     }, [initialData]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const { name, value, type, checked } = e.target;
+
+        // Convert checkbox value to 1 or 0
+        const newValue = type === 'checkbox' ? (checked ? "True" : "False") : value;
+
+        setFormData({ ...formData, [name]: newValue });
     };
 
     const handleSubmit = () => {
@@ -34,7 +38,7 @@ const ModalForm = ({ open, onClose, onSave, initialData, fields }) => {
                     borderRadius: 2,
                 }}
             >
-                <h2>{initialData ? 'Edit Block' : 'Add Block'}</h2>
+                <h2>{modalType}</h2>
                 {fields.map((field) => {
                     if (field.type === 'select') {
                         return (
@@ -52,6 +56,20 @@ const ModalForm = ({ open, onClose, onSave, initialData, fields }) => {
                                     ))}
                                 </Select>
                             </FormControl>
+                        );
+                    } else if (field.type === 'checkbox') {
+                        return (
+                            <FormControlLabel
+                                key={field.name}
+                                control={
+                                    <Checkbox
+                                        name={field.name}
+                                        checked={Boolean(formData[field.name])} // Convert to boolean
+                                        onChange={handleChange}
+                                    />
+                                }
+                                label={field.label}
+                            />
                         );
                     }
                     return (

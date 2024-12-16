@@ -90,6 +90,7 @@ const CommoditiesPage = () => {
                 onClose={handleCloseModal}
                 onSave={handleSave}
                 initialData={currentCommodity}
+                modalType = 'Add/Edit Commodity'
                 fields={[
                     { name: 'name', label: 'Description' },
                     { name: 'avgCtnPrice', label: 'Average Price', type: 'number' },

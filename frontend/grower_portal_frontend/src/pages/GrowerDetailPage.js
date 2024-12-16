@@ -14,6 +14,7 @@ const GrowerDetailPage = () => {
     const [ranches, setRanches] = useState([]);
     const [blocks, setBlocks] = useState([]);
     const [commodities, setCommodities] = useState([]);
+    const [varieties, setVarieties] = useState([]);
     const [selectedRanch, setSelectedRanch] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalType, setModalType] = useState(null); // "ranch" or "block"
@@ -23,10 +24,13 @@ const GrowerDetailPage = () => {
         const growerData = await fetchData(`growers/${growerId}`);
         const ranchesData = await fetchData(`${ranch_endpoint}?grower=${growerId}`);
         const commoditiesData = await fetchData('commodities');
+        const varietiesData = await fetchData('varieties');
+
 
         setGrower(growerData);
         setRanches(ranchesData);
         setCommodities(commoditiesData);
+        setVarieties(varietiesData);
 
         // Automatically select the first ranch
         if (ranchesData.length > 0) {
@@ -60,9 +64,10 @@ const GrowerDetailPage = () => {
 
     const handleSave = async (data) => {
         if (modalType === 'ranch') {
-            await createData(ranch_endpoint, { ...data, grower: grower.id });
+            await createData(ranch_endpoint, { ...data, grower_id: grower.id });
         } else if (modalType === 'block') {
-            await createData(block_endpoint, { ...data, ranch: selectedRanch.id });
+            await createData(block_endpoint, { ...data, ranch_id: selectedRanch.id });
+            console.log(data);
         }
         loadData();
         handleCloseModal();
@@ -158,6 +163,7 @@ const GrowerDetailPage = () => {
                 onClose={handleCloseModal}
                 onSave={handleSave}
                 initialData={currentEntity}
+                modalType={modalType === 'ranch' ? 'Add/Edit Ranch' : 'Add/Edit Block'}
                 fields={
                     modalType === 'ranch'
                         ? [{ name: 'name', label: 'Ranch Name' }]
@@ -174,6 +180,15 @@ const GrowerDetailPage = () => {
                                       label: c.name,
                                   })),
                               },
+                              {
+                                name: 'planted_variety',
+                                label: 'Planted Variety',
+                                type: 'select',
+                                options: varieties.map((v=v) => ({
+                                    value: v.id,
+                                    label: v.name,
+                                })),
+                            },
                               { name: 'gib_applied', label: 'Gib Applied', type: 'checkbox' },
                           ]
                         : []
