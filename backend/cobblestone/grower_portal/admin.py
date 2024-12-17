@@ -9,7 +9,7 @@ class CommodityAdmin(admin.ModelAdmin):
 
 @admin.register(Grower)
 class GrowerAdmin(admin.ModelAdmin):
-    list_display = ("name", "grower_contact_email", "grower_contact_phone")
+    list_display = ("name", "grower_id", "grower_contact_email", "grower_contact_phone")
     search_fields = ("name",)
 
 
@@ -22,7 +22,7 @@ class RanchAdmin(admin.ModelAdmin):
 
 @admin.register(Block)
 class BlockAdmin(admin.ModelAdmin):
-    list_display = ("name", "ranch", "size", "planted_commodity", "planted_variety")
+    list_display = ("name", "block_id", "ranch", "size", "planted_commodity", "planted_variety")
     search_fields = ("name", "ranch__name", "planted_commodity__name")
     list_filter = ("ranch", "planted_commodity")
 

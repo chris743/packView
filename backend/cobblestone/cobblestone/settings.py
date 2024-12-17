@@ -82,10 +82,15 @@ WSGI_APPLICATION = 'cobblestone.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',  # Use PostGIS engine
+        'NAME': 'applications',                       # Replace with your database name
+        'USER': 'chrism',                       # Replace with your PostgreSQL username
+        'PASSWORD': '!Cncamrts1',               # Replace with your PostgreSQL password
+        'HOST': '192.168.128.30',                           # IP of your PostgreSQL server
+        'PORT': '5432',                                     # Default PostgreSQL port
     }
 }
+
 
 
 # Password validation

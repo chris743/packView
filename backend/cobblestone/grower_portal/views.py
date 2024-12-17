@@ -1,4 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
+from .models import Block
+from .serializers import BlockSerializer
+
 from .models import (Grower, 
                      Ranch,
                      Block, 
@@ -36,6 +39,13 @@ class RanchViewSet(ModelViewSet):
 class BlockViewSet(ModelViewSet):
     queryset = Block.objects.all()
     serializer_class = BlockSerializer
+
+    def get_queryset(self):
+        ranch_id = self.request.query_params.get('ranch')
+        if ranch_id:
+            ranch_id = ranch_id.rstrip('/')
+            return self.queryset.filter(ranch_id=ranch_id)
+        return self.queryset
 
 
 class CommodityViewSet(ModelViewSet):

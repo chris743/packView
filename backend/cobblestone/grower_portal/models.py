@@ -3,6 +3,7 @@ import uuid
 
 class Grower(models.Model):
     name = models.CharField(max_length=255)
+    grower_id = models.IntegerField(null=True, blank=True)
     grower_contact = models.CharField(blank=True, null=False, max_length=200)
     grower_contact_email = models.EmailField(blank=True, null=True)
     grower_contact_phone = models.CharField(max_length=20, blank=True, null=True)
@@ -45,6 +46,7 @@ class Varieties (models.Model):
 
 class Block(models.Model):
     name = models.CharField(max_length=255)
+    block_id = models.IntegerField(null=True, blank=False)
     ranch = models.ForeignKey(Ranch, on_delete=models.CASCADE, related_name="blocks")
     size = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # e.g., acres
     planted_commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE,related_name="commodities")
