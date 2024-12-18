@@ -9,7 +9,9 @@ from .views import (
     ProductionRunsViewSet,
     LaborContractorsViewSet,
     TruckingContractorViewSet,
-    VarietiesViewSet
+    VarietiesViewSet,
+    FolderViewSet,
+    FileViewSet
 )
 
 router = DefaultRouter()
@@ -23,5 +25,7 @@ router.register(r'production-runs', ProductionRunsViewSet)
 router.register(r'labor_contractors', LaborContractorsViewSet)
 router.register(r'trucking_contractors', TruckingContractorViewSet)
 router.register(r'varieties', VarietiesViewSet)
+router.register(r'folders', FolderViewSet, basename='folder')
+router.register(r'files', FileViewSet, basename='file')
 
 urlpatterns = router.urls

@@ -1,6 +1,6 @@
 from django.db import models
 import uuid
-
+import os
 class Grower(models.Model):
     name = models.CharField(max_length=255)
     grower_id = models.IntegerField(null=True, blank=True)
@@ -107,3 +107,31 @@ class Receivings (models.Model):
 
     def __str__(self):
         return f"{self.harvest} - {self.receipt_id}"
+
+def file_upload_path(instance, filename):
+    if instance.folder:
+        return os.path.join("storage", instance.folder.get_full_path(), filename)
+    return os.path.join("storage", filename)
+
+class Folder(models.Model):
+    name = models.CharField(max_length=255)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    grower = models.ForeignKey(Grower, on_delete=models.CASCADE, related_name='folders')  # Link folder to grower
+
+    def __str__(self):
+        return self.name
+
+    def get_full_path(self):
+        """ Recursively build the folder path. """
+        if self.parent:
+            return os.path.join(self.parent.get_full_path(), self.name)
+        return self.name
+
+class File(models.Model):
+    folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files', null=True, blank=True)
+    name = models.CharField(max_length=255)
+    file = models.FileField(upload_to=file_upload_path)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name

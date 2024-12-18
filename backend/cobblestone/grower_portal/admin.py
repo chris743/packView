@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Grower, Ranch, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors
+from .models import Grower, Ranch, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
 
 
 @admin.register(Commodity)
@@ -58,3 +58,13 @@ class LaborContractorsAdmin(admin.ModelAdmin):
 class TruckingContractorsAdmin(admin.ModelAdmin):
     list_display = ('name', 'primary_contact_name', 'primary_contact_phone', 'office_phone', 'mailing_address')
     search_fields = ('name',)
+
+@admin.register(Folder)
+class FolderAdmin(admin.ModelAdmin):
+    list_display=('name', 'parent')
+
+@admin.register(File)
+class FileAdmin(admin.ModelAdmin):
+    list_display=('folder', 'name', 'file', 'uploaded_at')
+    search_fields=('name',)
+    

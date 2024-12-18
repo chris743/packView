@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Grower, Ranch, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors
+from .models import Grower, Ranch, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
 
 class GrowerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -90,3 +90,18 @@ class VarietiesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Varieties
         fields = '__all__'
+
+class FolderSerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Folder
+        fields = ['id', 'name', 'parent', 'children']
+
+    def get_children(self, obj):
+        return FolderSerializer(obj.children.all(), many=True).data
+
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = ['id', 'name', 'file', 'uploaded_at', 'folder']

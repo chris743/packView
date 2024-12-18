@@ -11,7 +11,9 @@ from .models import (Grower,
                      Receivings, 
                      ProductionRuns,
                      LaborContractors,
-                     TruckingContractors
+                     TruckingContractors,
+                     Folder,
+                     File
                      )
 from .serializers import (
     GrowerSerializer,
@@ -23,7 +25,9 @@ from .serializers import (
     ProductionRunsSerializer,
     LaborContractorSerializer,
     VarietiesSerializer,
-    TruckingContractorSerializer
+    TruckingContractorSerializer,
+    FolderSerializer,
+    FileSerializer
 )
 
 class GrowerViewSet(ModelViewSet):
@@ -78,3 +82,28 @@ class TruckingContractorViewSet(ModelViewSet):
 class VarietiesViewSet(ModelViewSet):
     queryset = Varieties.objects.all()
     serializer_class = VarietiesSerializer
+
+
+class FolderViewSet(ModelViewSet):
+    queryset = Folder.objects.all()
+    serializer_class = FolderSerializer
+
+    def get_queryset(self):
+        grower_id = self.request.query_params.get('grower')  # Fetch grower_id from query parameters
+        parent_id = self.request.query_params.get('parent')  # Fetch parent_id from query parameters
+
+        if not grower_id:
+            return self.queryset.none()  # Return an empty queryset if grower_id is missing
+
+        queryset = self.queryset.filter(grower_id=grower_id)  # Filter by grower_id
+
+        if parent_id:
+            queryset = queryset.filter(parent_id=parent_id)  # Further filter by parent_id
+        elif parent_id is None:
+            queryset = queryset.filter(parent__isnull=True)  # Return root folders for the grower
+
+        return queryset
+
+class FileViewSet(ModelViewSet):
+    queryset = File.objects.all()
+    serializer_class = FileSerializer
