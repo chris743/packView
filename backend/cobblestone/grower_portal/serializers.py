@@ -8,14 +8,9 @@ class GrowerSerializer(serializers.ModelSerializer):
 
 
 class RanchSerializer(serializers.ModelSerializer):
-    grower = GrowerSerializer(read_only=True)
-    grower_id = serializers.PrimaryKeyRelatedField(
-        queryset=Grower.objects.all(), write_only=True, source='grower'
-    )
-
     class Meta:
         model = Ranch
-        fields = '__all__'
+        fields = ['id', 'name', 'grower']
 
 
 class CommoditySerializer(serializers.ModelSerializer):
@@ -96,7 +91,7 @@ class FolderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Folder
-        fields = ['id', 'name', 'parent', 'children']
+        fields = ['id', 'name', 'parent', 'grower', 'children']
 
     def get_children(self, obj):
         return FolderSerializer(obj.children.all(), many=True).data

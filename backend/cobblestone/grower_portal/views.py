@@ -1,6 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from .models import Block
 from .serializers import BlockSerializer
+from rest_framework.exceptions import ValidationError
 
 from .models import (Grower, 
                      Ranch,
@@ -39,6 +40,12 @@ class RanchViewSet(ModelViewSet):
     queryset = Ranch.objects.all()
     serializer_class = RanchSerializer
 
+    def get_queryset(self):
+        grower_id = self.request.query_params.get('grower')  # Get grower ID from query params
+        if grower_id:
+            grower_id = grower_id.rstrip("/")
+            return self.queryset.filter(grower_id=grower_id)  # Filter by grower ID
+        return self.queryset.none()  # Return an empty queryset if grower ID is not provided
 
 class BlockViewSet(ModelViewSet):
     queryset = Block.objects.all()
@@ -89,21 +96,46 @@ class FolderViewSet(ModelViewSet):
     serializer_class = FolderSerializer
 
     def get_queryset(self):
-        grower_id = self.request.query_params.get('grower')  # Fetch grower_id from query parameters
-        parent_id = self.request.query_params.get('parent')  # Fetch parent_id from query parameters
+        """
+        Filter folders based on the grower passed in the query parameters.
+        """
+        grower_id = self.request.query_params.get('grower')  # Get grower ID from query params
+        if grower_id:
+            return self.queryset.filter(grower_id=grower_id)  # Return folders for the specified grower
+        return self.queryset.none()  # Return nothing if grower ID is missing
+
+    def perform_create(self, serializer):
+        """
+        Create a folder for the specified grower.
+        """
+        grower_id = self.request.data.get('grower')
+        parent_id = self.request.data.get('parent')
 
         if not grower_id:
-            return self.queryset.none()  # Return an empty queryset if grower_id is missing
+            raise ValidationError({"grower": "This field is required."})
 
-        queryset = self.queryset.filter(grower_id=grower_id)  # Filter by grower_id
-
+        parent_folder = None
         if parent_id:
-            queryset = queryset.filter(parent_id=parent_id)  # Further filter by parent_id
-        elif parent_id is None:
-            queryset = queryset.filter(parent__isnull=True)  # Return root folders for the grower
+            try:
+                parent_folder = Folder.objects.get(id=parent_id, grower_id=grower_id)
+            except Folder.DoesNotExist:
+                raise ValidationError({"parent": "Parent folder does not exist or does not belong to the grower."})
 
-        return queryset
+        serializer.save(grower_id=grower_id, parent=parent_folder)
 
 class FileViewSet(ModelViewSet):
     queryset = File.objects.all()
     serializer_class = FileSerializer
+
+    def get_queryset(self):
+        """
+        Filter files based on the folder's grower.
+        """
+        folder_id = self.request.query_params.get('folder')
+        if folder_id:
+            try:
+                folder = Folder.objects.get(id=folder_id)
+                return self.queryset.filter(folder=folder)
+            except Folder.DoesNotExist:
+                return self.queryset.none()
+        return self.queryset.none()

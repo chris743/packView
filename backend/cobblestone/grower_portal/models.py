@@ -1,4 +1,6 @@
 from django.db import models
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 import uuid
 import os
 class Grower(models.Model):
@@ -126,6 +128,11 @@ class Folder(models.Model):
         if self.parent:
             return os.path.join(self.parent.get_full_path(), self.name)
         return self.name
+@receiver(post_save, sender=Grower)
+def create_root_folder_for_grower(sender, instance, created, **kwargs):
+    if created:
+        Folder.objects.create(name=f"{instance.name}_root", grower=instance, parent=None)   
+
 
 class File(models.Model):
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files', null=True, blank=True)
