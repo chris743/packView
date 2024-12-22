@@ -6,6 +6,8 @@ import CommoditiesPage from './pages/CommoditiesPage';
 import GrowersPage from './pages/GrowersPage';
 import RanchesPage from './pages/RanchesPage';
 import GrowerDetailPage from './pages/GrowerDetailPage';
+import HarvestPlanPage from './pages/HarvestPlanPage';
+import CapacityPage from './pages/DashboardPages/CapacityPage';
 
 const App = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -23,6 +25,8 @@ const App = () => {
                     <Route path="/growers" element={<GrowersPage />} />
                     <Route path="/growers/:growerId" element={<GrowerDetailPage />} />
                     <Route path="/ranches" element={<RanchesPage />} />
+                    <Route path="/harvest-plan" element={<HarvestPlanPage />} />
+                    <Route path="/analysis/capacity" element={<CapacityPage />} />
                   </Routes>
                 </Router>
                 </div>

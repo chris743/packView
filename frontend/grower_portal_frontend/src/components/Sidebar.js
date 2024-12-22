@@ -3,7 +3,7 @@ import { Drawer, List, ListItem, ListItemIcon, ListItemText, IconButton, Box } f
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
-import GroupIcon from '@mui/icons-material//Group';
+import GroupIcon from '@mui/icons-material/Group';
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);

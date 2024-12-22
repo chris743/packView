@@ -21,6 +21,7 @@ export const createData = async (endpoint, data) => {
     return response.data; // Return the created commodity
   } catch (error) {
     console.log(data);
+    console.log(`${API_URL}/${endpoint}/`);
     throw new Error("Error creating oject");
   }
 };

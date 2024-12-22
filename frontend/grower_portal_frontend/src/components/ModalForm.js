@@ -13,7 +13,7 @@ const ModalForm = ({ open, onClose, onSave, initialData, fields, modalType }) =>
         const { name, value, type, checked } = e.target;
 
         // Convert checkbox value to 1 or 0
-        const newValue = type === 'checkbox' ? (checked ? "True" : "False") : value;
+        const newValue = type === 'checkbox' ? (checked ? "true" : "false") : value;
 
         setFormData({ ...formData, [name]: newValue });
     };
