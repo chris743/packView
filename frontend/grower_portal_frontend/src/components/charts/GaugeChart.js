@@ -1,16 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
-import { fetchData } from '../../api/api';
+import { fetchChartData } from '../../api/api';
 import axios from 'axios';
 import { Button } from '@mui/material';
 
-const GaugeChart = ({endpoint, data, offset}) => {
- 
+
+const GaugeChart = ({endpoint, offset}) => {
+    const [currentValue, setCurrentValue] = useState(0);
+    const [capacityLimit, setCapacityLimit] = useState(0);
+
+    const loadData = async () => {
+        const data = await fetchChartData(endpoint);
+        setCurrentValue(data.currentValue)
+        setCapacityLimit(data.capacityLimit)
+    };
+
+    useEffect(() => {
+        loadData();
+    });
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px' }}>
-            <h1 style={{ marginBottom: '20px' }}>CHART</h1>
+            <h1 style={{ marginBottom: '20px' }}>{endpoint}</h1>
             <Gauge
-                value={75}
+                value={currentValue / capacityLimit * 100}
                 startAngle={-110}
                 endAngle={110}
                 sx={{

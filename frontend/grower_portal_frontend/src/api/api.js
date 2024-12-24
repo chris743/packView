@@ -3,11 +3,21 @@ import { data } from "react-router-dom";
 
 // Set up base URL if needed, e.g. for your backend server
 const API_URL = "http://127.0.0.1:8000/api"; // Replace with your API URL
+const CHART_URL = "http://127.0.0.1:8000/data";
 
 // Fetch all commodities
 export const fetchData = async (endpoint) => {
   try {
     const response = await axios.get(`${API_URL}/${endpoint}/`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Error fetching commodities");
+  }
+};
+
+export const fetchChartData = async (endpoint) => {
+  try {
+    const response = await axios.get(`${CHART_URL}/${endpoint}/`);
     return response.data;
   } catch (error) {
     throw new Error("Error fetching commodities");
