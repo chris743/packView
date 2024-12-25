@@ -29,3 +29,25 @@ class Orders(models.Model):
 
     def __str__(self):
         return f"Order {self.sales_order_number} ({self.line_id})"
+
+
+class BinInventory(models.Model):
+    size_id = models.CharField(max_length=50,null=True, blank=True)
+    on_hand_quantity = models.FloatField(null=True, blank=True)
+    import_id = models.BigIntegerField(null=True, blank=True)
+    grade_id = models.CharField(max_length=50,null=True, blank=True)
+    variety_id = models.CharField(max_length=50,null=True, blank=True)
+    commodity_id = models.CharField(max_length=50,null=True, blank=True)
+    first_receive_date = models.CharField(max_length=50,null=True, blank=True)
+    warehouse_location = models.CharField(max_length=50,null=True, blank=True)
+    company = models.CharField(max_length=50,null=True, blank=True)
+    commodity_id_1 = models.CharField(max_length=50,null=True, blank=True, db_column='commodity_id.1')
+    grade_id_1 = models.CharField(max_length=50,null=True, blank=True, db_column='grade_id.1')
+    style_id = models.CharField(max_length=50,null=True, blank=True)
+    method_id = models.CharField(max_length=50,null=True, blank=True)
+    room_row_id = models.CharField(max_length=50,null=True, blank=True)
+    tag_id = models.CharField(max_length=50, primary_key=True, null=False, blank=False)
+    region_id = models.CharField(max_length=50,null=True, blank=True)
+
+    def __str__(self):
+        return f"Order {self.tag_id} ({self.commodity_id})"
