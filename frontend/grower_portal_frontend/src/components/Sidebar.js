@@ -9,6 +9,7 @@ import {
     Box,
     Collapse,
 } from '@mui/material';
+import HomeIcon from '@mui/icons-material/Home'
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -65,9 +66,9 @@ const Sidebar = () => {
             >
                 <ListItem button component="a" href="/" sx={{ textDecoration: "none", color: "inherit" }}>
                     <ListItemIcon>
-                        <DashboardIcon />
+                        <HomeIcon />
                     </ListItemIcon>
-                    {!isCollapsed && <ListItemText primary="Dashboard" />}
+                    {!isCollapsed && <ListItemText primary="Home" />}
                 </ListItem>
                 <ListItem button component="a" href="/commodities"sx={{ textDecoration: "none", color: "inherit" }}>
                     <ListItemIcon>
@@ -102,7 +103,7 @@ const Sidebar = () => {
                             <InventoryIcon style={{ paddingRight: "5px"}}/>
                             {!isCollapsed && <ListItemText primary="Inventory" />}
                         </ListItem>
-                        <ListItem button component="a" href="/orders" sx={{ pl: 4, textDecoration: "none", color: "inherit" }}>
+                        <ListItem button component="a" href="/analysis/order-analysis" sx={{ pl: 4, textDecoration: "none", color: "inherit" }}>
                             <ShowChartIcon style={{ paddingRight: "5px"}}/>
                             {!isCollapsed && <ListItemText primary="Orders" />}
                         </ListItem>

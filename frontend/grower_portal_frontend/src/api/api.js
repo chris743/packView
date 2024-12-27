@@ -2,8 +2,8 @@ import axios from "axios";
 import { data } from "react-router-dom";
 
 // Set up base URL if needed, e.g. for your backend server
-const API_URL = "http://127.0.0.1:8000/api"; // Replace with your API URL
-const CHART_URL = "http://127.0.0.1:8000/data";
+const API_URL = "http://192.168.128.210:8000/api"; // Replace with your API URL
+const CHART_URL = "http://192.168.128.210:8000/data";
 
 // Fetch all commodities
 export const fetchData = async (endpoint) => {

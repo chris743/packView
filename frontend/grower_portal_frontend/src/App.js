@@ -10,7 +10,7 @@ import RanchesPage from "./pages/RanchesPage";
 import HarvestPlanPage from "./pages/HarvestPlanPage";
 import CapacityPage from "./pages/DashboardPages/CapacityPage";
 import BinInventory from "./pages/DashboardPages/BinInventoryPage";
-import OrdersAnalysisPage from "./pages/DashboardPages/OrdersAnalysisPage";
+import OrdersAnalysis from "./pages/DashboardPages/OrdersAnalysisPage";
 import { useThemeContext, ThemeContextProvider } from "./context/ThemeContext";
 
 const AppContent = () => {
@@ -48,7 +48,7 @@ const AppContent = () => {
               <Route path="/harvest-plan" element={<HarvestPlanPage />} />
               <Route path="/analysis/capacity" element={<CapacityPage />} />
               <Route path="/analysis/bin-inventory" element={<BinInventory />} />
-              <Route path="/analysis/orders-analysis" element={<OrdersAnalysisPage />} />
+              <Route path="/analysis/order-analysis" element={<OrdersAnalysis />} />
             </Routes>
           </Router>
         </Box>

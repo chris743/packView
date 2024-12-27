@@ -5,14 +5,13 @@ import LineChart from "../../components/charts/LineChart";
 import StatCardGroup from "../../components/charts/StatCardGroup";
 import { fetchChartData } from "../../api/api";
 
-const OrdersAnalysisPage = () => {
+const OrdersAnalysis = () => {
   const [pieChartData, setPieChartData] = useState(null);
   const [barChartsData, setBarChartsData] = useState([]);
   const [lineChartData, setLineChartData] = useState(null);
   const [stats, setStats] = useState([]);
 
   useEffect(() => {
-    // Fetch data for all charts and stats
     const fetchData = async () => {
       try {
         const data = await fetchChartData("orders-dashboard");
@@ -29,19 +28,61 @@ const OrdersAnalysisPage = () => {
         console.error("Error fetching data:", error);
       }
     };
-
+    
     fetchData();
+
+    const interval = setInterval(fetchData, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Orders Analysis</h2>
-      {pieChartData && <PieChart data={pieChartData} title="Commodity Distribution" />}
-      {barChartsData.length > 0 && <BarChartGroup barChartsData={barChartsData} />}
-      {lineChartData && <LineChart data={lineChartData} title="Total Order Quantity Over Time" />}
-      <StatCardGroup stats={stats} />
+    <div style={{ padding: "10px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
+        {/* Top Left: Pie Chart */}
+
+        {/* Top Right: Bar Charts */}
+        <div
+          style={{
+            flex: "1 1 65%",
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "20px",
+          }}
+        >
+          {barChartsData.map((barChartData, index) => (
+            <div
+              key={index}
+            >
+              <BarChartGroup barChartsData={[barChartData]} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
+        {/* Line Chart: 50% Width */}
+        <div style={{ flex: "1 1 70%", minWidth: "300px" }}>
+          {lineChartData && (
+            <div style={{ height: "300px", overflow: "hidden" }}>
+              <LineChart data={lineChartData} title="Total Order Quantity Over Time" />
+            </div>
+          )}
+        </div>
+        {/* Pie Chart: 50% Width */}
+        <div style={{ flex: "1 1 30%", minWidth: "300px" }}>
+          {pieChartData && (
+            <div style={{ height: "300px", overflow: "hidden" }}>
+              <PieChart data={pieChartData} title="Commodity Distribution" />
+            </div>
+          )}
+        </div>
+        </div>
+      {/* Below Line Chart: Info Cards */}
+      <div style={{ marginTop: "20px" }}>
+        <StatCardGroup stats={stats} />
+      </div>
     </div>
   );
 };
 
-export default OrdersAnalysisPage;
+export default OrdersAnalysis;

@@ -4,14 +4,28 @@ import ReusableTable from "../../components/ReusableTable";
 import StatCard from "../../components/charts/StatCard";
 import { fetchChartData } from "../../api/api";
 import BarChart from "../../components/charts/BarChart";
-import { minHeight } from "@mui/system";
+import { fontSize, minHeight } from "@mui/system";
 
+const gaugeEndpoint = "capacity-all";
 const top5endpoint = "top-5";
 const statsEndpoint = "weekly-stats";
 const chartEndpoint = "capacity-bar-charts";
 
 const Dashboard = () => {
   const today = new Date().toISOString().split("T")[0]; // Get today's date
+
+  
+
+  const [gauge, setGauge] = useState(null);
+
+  const loadGaugeData = async () => {
+    try {
+        const data = await fetchChartData(gaugeEndpoint);
+        setGauge(data);
+    } catch (error) {
+        console.log(error);
+    };
+  }
 
   const [topProducts, setTopProducts] = useState({
     giro: [],
@@ -52,10 +66,19 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
+  const fetchAll = () => {
     loadTopProducts();
     loadStats();
     loadChartData();
+    loadGaugeData();
+  };
+
+  useEffect(() => {
+    fetchAll();
+
+    const interval = setInterval(fetchAll, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -112,8 +135,8 @@ const Dashboard = () => {
       >
         {/* Giro */}
         <div style={{ textAlign: "center" }}>
-          <GaugeChart title="Giro Capacity" endpoint="capacity-all" style="giro" />
-          <div style={{minHeight: "355px", margin:"10px"}}>
+          <GaugeChart title="Giro Capacity" data={gauge} style="giro" />
+          <div style={{marginTop:"10px"}}>
           <ReusableTable columns={columns} data={topProducts.giro} />
           </div>
           <div>
@@ -123,8 +146,8 @@ const Dashboard = () => {
         </div>
         {/* Fox */}
         <div style={{ textAlign: "center" }}>
-          <GaugeChart title="Fox Capacity" endpoint="capacity-all" style="fox" />
-          <div style={{minHeight: "355px", margin:"10px"}}>
+          <GaugeChart title="Fox Capacity" data={gauge} style="fox" />
+          <div style={{ marginTop:"10px"}}>
           <ReusableTable columns={columns} data={topProducts.fox} />
           </div>
           <div>
@@ -134,8 +157,8 @@ const Dashboard = () => {
         </div>
         {/* Vex */}
         <div style={{ textAlign: "center" }}>
-          <GaugeChart title="Vexar Capacity" endpoint="capacity-all" style="vex" />
-          <div style={{minHeight: "355px", margin:"10px"}}>
+          <GaugeChart title="Vexar Capacity" data={gauge} style="vex" />
+          <div style={{ marginTop:"10px"}}>
           <ReusableTable columns={columns} data={topProducts.vex} />
           </div>
           <div>
@@ -145,8 +168,8 @@ const Dashboard = () => {
         </div>
         {/* Bulk */}
         <div style={{ textAlign: "center" }}>
-          <GaugeChart title="Bulk Capacity" endpoint="capacity-all" style="bulk" />
-          <div style={{minHeight: "355px", margin:"10px"}}>
+          <GaugeChart title="Bulk Capacity" data={gauge} style="bulk" />
+          <div style={{ marginTop:"10px"}}>
           <ReusableTable columns={columns} data={topProducts.bulk} />
           </div>
           <div>

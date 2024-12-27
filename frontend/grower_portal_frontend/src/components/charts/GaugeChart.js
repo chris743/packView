@@ -1,24 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Gauge, gaugeClasses } from "@mui/x-charts/Gauge";
-import { fetchChartData } from "../../api/api";
 import { useTheme } from "@mui/material/styles";
 
-const GaugeChart = ({ title, endpoint, style }) => {
+const GaugeChart = ({ title, data, style }) => {
   const [currentValue, setCurrentValue] = useState(0);
   const [capacityLimit, setCapacityLimit] = useState(0);
   const theme = useTheme(); // Access the current theme
 
-  const loadData = async () => {
-    const data = await fetchChartData(endpoint);
-    setCurrentValue(data.capacities[style]?.currentValue);
-    setCapacityLimit(data.capacities[style]?.capacityLimit);
-  };
-
   useEffect(() => {
-    loadData();
-  }, []);
+    if (data && data.capacities && data.capacities[style]) {
+      setCurrentValue(data.capacities[style].currentValue);
+      setCapacityLimit(data.capacities[style].capacityLimit);
+    } else {
+      console.error("Invalid data or style not found:", data);
+    }
+  }, [data, style]); // Rerun whenever data or style changes
 
-  const gaugeValue = Math.round((currentValue / capacityLimit) * 100);
+  const gaugeValue =
+    capacityLimit > 0 ? Math.round((currentValue / capacityLimit) * 100) : 0;
 
   return (
     <div

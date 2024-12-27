@@ -13,23 +13,30 @@ const LineChart = ({ data, title }) => {
         data: data.datasets[0].data,
         borderColor: "#0288d1",
         backgroundColor: "rgba(2, 136, 209, 0.2)",
+        tension: 0.4, // Smooth line
+        pointRadius: 3, // Small data points
       },
     ],
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false, // Allows chart to adjust with container
     plugins: {
-      legend: { display: false },
-      title: { display: true, text: title },
+      legend: { display: false }, // Hide the legend
+      title: { display: true, text: title, font: { size: 18 } },
     },
     scales: {
-      x: { title: { display: true, text: "Date" } },
-      y: { title: { display: true, text: "Total Order Quantity" } },
+      x: { title: { display: true, text: "Date", font: { size: 14 } } },
+      y: { title: { display: true, text: "Total Order Quantity", font: { size: 14 } } },
     },
   };
 
-  return <Line data={chartData} options={options} />;
+  return (
+    <div style={{ width: "100%", height: "400px" }}> {/* Ensures full width and adjustable height */}
+      <Line data={chartData} options={options} />
+    </div>
+  );
 };
 
 export default LineChart;

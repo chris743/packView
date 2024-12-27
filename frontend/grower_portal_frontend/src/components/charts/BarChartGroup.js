@@ -1,20 +1,28 @@
 import React from "react";
-import BarChart from "./BarChart"; // Reuse your existing BarChart component.
+import CommodityBarChart from "./CommodityBarChart"; // Reuse your existing BarChart component.
 
 const BarChartGroup = ({ barChartsData }) => {
+  // Updated transform function to use label/value naming
+  const transformData = (chartData) => {
+    const { labels, datasets } = chartData.chart;
+    return labels.map((label, index) => ({
+      label: label,
+      value: datasets[0].data[index]
+    }));
+  };
+  
+
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-around" }}>
-      {barChartsData.map((chartData, index) => (
-        <BarChart
+    <div className="flex flex-wrap justify-around p-4">
+      {barChartsData?.map((chartData, index) => (
+        <CommodityBarChart
           key={index}
-          data={chartData.data}
-          title={`Size Distribution for ${chartData.commodity}`}
-          xLabel="Size"
-          yLabel="Total Order Quantity"
+          data={transformData(chartData)}
+          title={`${chartData.commodity}`}
+          yLabel="Order Quantity"
         />
       ))}
     </div>
   );
 };
-
 export default BarChartGroup;

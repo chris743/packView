@@ -57,7 +57,7 @@ const BinInventory = () => {
           (r) => r.grade_id === row.grade_id.toUpperCase()
         );
         if (gradeRow && row.size_id) {
-          gradeRow[row.size_id] = (gradeRow[row.size_id] || 0) + (row.total_quantity || 0);
+          gradeRow[row.size_id] = (gradeRow[row.size_id] || 0) + (Math.round(row.total_quantity) || 0);
         }
       });
 
@@ -69,7 +69,7 @@ const BinInventory = () => {
         { field: "grade_id", headerName: "Grade", width: 150 },
         ...uniqueSizes.map((size) => ({
           field: size,
-          headerName: `Size ${size}`,
+          headerName: `${size}`,
           width: 100,
         })),
       ];
