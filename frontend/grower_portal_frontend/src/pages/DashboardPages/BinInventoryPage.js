@@ -1,37 +1,34 @@
 import React, { useEffect, useState } from "react";
-import { DataGrid } from "@mui/x-data-grid";
-import { Box, Typography, Modal, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Modal,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { fetchChartData } from "../../api/api";
 
 const binInventoryEndpoint = "bin-inventory";
 const associatedRecordsEndpoint = "associated-records";
 
+const GRADE_ORDER = ["EXP FANCY", "EXP CHOICE", "FANCY", "CHOICE", "STANDARD", "JUICE"];
+const TABLE_ORDER = ["NAVEL", "MANDARIN", "LEMON","CARA CARA", "GRAPEFRUIT", "BLOOD","MINNEOLA", "PUMMELO"]; // Predefined order for tables
+
 const BinInventory = () => {
+  const theme = useTheme();
   const [tableData, setTableData] = useState({});
   const [commodityColumns, setCommodityColumns] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
   const [associatedRecords, setAssociatedRecords] = useState([]);
   const [error, setError] = useState(null);
   const [modalTitle, setModalTitle] = useState("");
-
-  const GRADE_ORDER = ["EXP FANCY", "EXP CHOICE", "FANCY", "CHOICE", "STANDARD", "JUICE"];
-
-  const handleCellClick = async (params, commodity) => {
-    const { field: size_id, row: { grade_id } } = params;
-
-    if (size_id === "grade_id") return; // Ignore clicks on the grade column
-
-    try {
-      const cleanedSize = size_id ? String(size_id).replace("/", "").padStart(3, "0") : null; // Clean size
-      const data = await fetchChartData(`${associatedRecordsEndpoint}?commodity=${commodity}&grade=${grade_id}&size=${cleanedSize}`);
-      setAssociatedRecords(data);
-      setModalTitle(`Records for ${commodity} - ${grade_id} - Size ${size_id}`);
-      setModalOpen(true);
-    } catch (err) {
-      console.error("Error fetching associated records:", err);
-      setAssociatedRecords([]);
-    }
-  };
 
   const preparePivotData = (data) => {
     const uniqueCommodities = [...new Set(data.map((row) => row.commodity_id))];
@@ -40,9 +37,10 @@ const BinInventory = () => {
 
     uniqueCommodities.forEach((commodity) => {
       const commodityData = data.filter((row) => row.commodity_id === commodity);
-
       const uniqueSizes = [...new Set(commodityData.map((row) => row.size_id))].sort((a, b) => a - b);
-      const uniqueGrades = [...new Set(commodityData.map((row) => row.grade_id.toUpperCase()))];
+      const uniqueGrades = [...new Set(commodityData.map((row) => row.grade_id.toUpperCase()))].sort(
+        (a, b) => GRADE_ORDER.indexOf(a) - GRADE_ORDER.indexOf(b)
+      );
 
       groupedData[commodity] = uniqueGrades.map((grade) => {
         const row = { id: grade, grade_id: grade };
@@ -53,36 +51,27 @@ const BinInventory = () => {
       });
 
       commodityData.forEach((row) => {
-        const gradeRow = groupedData[commodity].find(
-          (r) => r.grade_id === row.grade_id.toUpperCase()
-        );
+        const gradeRow = groupedData[commodity].find((r) => r.grade_id === row.grade_id.toUpperCase());
         if (gradeRow && row.size_id) {
-          gradeRow[row.size_id] = (gradeRow[row.size_id] || 0) + (Math.round(row.total_quantity) || 0);
+          gradeRow[row.size_id] =
+            (gradeRow[row.size_id] || 0) + (Math.round(row.total_quantity) || 0);
         }
       });
-
-      groupedData[commodity] = groupedData[commodity].sort(
-        (a, b) => GRADE_ORDER.indexOf(a.grade_id) - GRADE_ORDER.indexOf(b.grade_id)
-      );
 
       columnsByCommodity[commodity] = [
         { field: "grade_id", headerName: "Grade", width: 150 },
         ...uniqueSizes.map((size) => ({
           field: size,
-          headerName: `${size}`,
+          headerName: `Size ${size}`,
           width: 100,
+          align: "center",
+          headerAlign: "center",
         })),
       ];
     });
 
     setCommodityColumns(columnsByCommodity);
     return groupedData;
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setAssociatedRecords([]); // Reset records
-    setModalTitle(""); // Reset title
   };
 
   useEffect(() => {
@@ -101,25 +90,76 @@ const BinInventory = () => {
   }, []);
 
   const renderTables = () => {
-    const commodities = Object.keys(tableData);
-
-    if (!commodities.length) {
+    if (!Object.keys(tableData).length) {
       return <Typography color="error">No data available.</Typography>;
     }
-
-    return commodities.map((commodity) => (
-      <Box key={commodity} sx={{ padding: "10px", border: "1px solid #ddd" }}>
-        <Typography variant="h6" gutterBottom>
-          Commodity: {commodity}
-        </Typography>
-        <DataGrid
-          rows={tableData[commodity]}
-          columns={commodityColumns[commodity]} // Use commodity-specific columns
-          autoHeight
-          disableSelectionOnClick
-          hideFooter // Remove footer
-          onCellClick={(params) => handleCellClick(params, commodity)} // Handle cell clicks
-        />
+  
+    const sortedTableData = Object.entries(tableData).sort(
+      ([a], [b]) => TABLE_ORDER.indexOf(a) - TABLE_ORDER.indexOf(b)
+    );
+  
+    return sortedTableData.map(([commodity, data]) => (
+      <Box
+        key={commodity}
+        sx={{
+          mb: 1,
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 1,
+          overflow: "hidden",
+          backgroundColor: theme.palette.background.paper,
+        }}
+      >
+        <Box
+          sx={{
+            p: 1,
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            {commodity}
+          </Typography>
+        </Box>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: "bold" }}>Grade</TableCell>
+                {commodityColumns[commodity]
+                  .filter((col) => col.field !== "grade_id")
+                  .map((col) => (
+                    <TableCell key={col.field} align="center" sx={{ fontWeight: "bold" }}>
+                      {col.headerName}
+                    </TableCell>
+                  ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.map((row) => (
+                <TableRow
+                  key={row.grade_id}
+                  sx={{
+                    backgroundColor: row.grade_id === "EXP FANCY" ? theme.palette.action.selected : "inherit",
+                  }}
+                >
+                  <TableCell>{row.grade_id}</TableCell>
+                  {commodityColumns[commodity]
+                    .filter((col) => col.field !== "grade_id")
+                    .map((col) => (
+                      <TableCell key={col.field} align="center">
+                        {row[col.field]}
+                      </TableCell>
+                    ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
     ));
   };
@@ -130,8 +170,8 @@ const BinInventory = () => {
     }
 
     return (
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer>
+        <Table size="small">
           <TableHead>
             <TableRow>
               {Object.keys(associatedRecords[0]).map((key) => (
@@ -140,10 +180,10 @@ const BinInventory = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {associatedRecords.map((record, index) => (
-              <TableRow key={index}>
-                {Object.values(record).map((value, idx) => (
-                  <TableCell key={idx}>{value}</TableCell>
+            {associatedRecords.map((record, idx) => (
+              <TableRow key={idx}>
+                {Object.values(record).map((value, i) => (
+                  <TableCell key={i}>{value}</TableCell>
                 ))}
               </TableRow>
             ))}
@@ -154,39 +194,46 @@ const BinInventory = () => {
   };
 
   return (
-    <Box sx={{ padding: "20px" }}>
-      <Typography variant="h4" gutterBottom>
-        Bin Inventory
-      </Typography>
+    <Box
+      sx={{
+        p: 3,
+        maxWidth: "1400px",
+        mx: "auto",
+        backgroundColor: theme.palette.background.default,
+        color: theme.palette.text.primary,
+      }}
+    >
       {error ? (
         <Typography color="error">{error}</Typography>
       ) : (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)", // Two columns
-            gap: "20px", // Spacing between grid items
-          }}
-        >
-          {renderTables()}
-        </Box>
+        renderTables()
       )}
-
-      {/* Modal for Associated Records */}
       <Modal
         open={modalOpen}
-        onClose={closeModal} // Close modal and reset state
-        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+        onClose={() => setModalOpen(false)}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
-        <Paper sx={{ padding: "20px", maxWidth: "80%", maxHeight: "80%", overflow: "auto" }}>
-          <Typography variant="h6" gutterBottom>
+        <Paper
+          sx={{
+            width: "90%",
+            maxWidth: 1000,
+            maxHeight: "90vh",
+            overflow: "auto",
+            p: 3,
+            backgroundColor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2 }}>
             {modalTitle}
           </Typography>
-          {renderModalContent()}
-          <Box sx={{ textAlign: "right", marginTop: "20px" }}>
-            <Button variant="contained" color="primary" onClick={closeModal}>
-              Close
-            </Button>
+          <TableContainer>{renderModalContent()}</TableContainer>
+          <Box sx={{ mt: 0, textAlign: "right" }}>
+            <Button onClick={() => setModalOpen(false)}>Close</Button>
           </Box>
         </Paper>
       </Modal>
