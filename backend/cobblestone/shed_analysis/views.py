@@ -9,6 +9,8 @@ from django.db.models.functions import Concat
 from datetime import date, timedelta
 import pandas as pd
 import re
+from zoneinfo import ZoneInfo
+from datetime import datetime
 
 class CapacityGaugeView(APIView):
     """
@@ -55,7 +57,8 @@ class CapacityGaugeView(APIView):
         return min(capacities) * row['order_quantity'] if capacities else None
 
     def get(self, request):
-        today = date.today()
+        pst_timezone = ZoneInfo("America/Los_Angeles")
+        today = datetime.now(pst_timezone).date()
 
         # Fetch orders and convert to DataFrame
         orders_qs = Orders.objects.filter(ship_date=today).values()
@@ -117,7 +120,8 @@ class TopFiveThisWeek(APIView):
     sorted by the order_quantity column.
     """
     def get(self, request):
-        today = date.today()
+        pst_timezone = ZoneInfo("America/Los_Angeles")
+        today = datetime.now(pst_timezone).date()
         # Calculate the start of the week (Sunday)
         start_of_week = today - timedelta(days=today.weekday() + 1 if today.weekday() != 6 else 0)
         end_of_week = start_of_week + timedelta(days=6)
@@ -172,7 +176,9 @@ class WeeklyStatsView(APIView):
     """
 
     def get(self, request):
-        today = date.today()
+        pst_timezone = ZoneInfo("America/Los_Angeles")
+        today = datetime.now(pst_timezone).date()
+
         start_of_week = today - timedelta(days=today.weekday())  # Start of the current week (Monday)
         end_of_week = start_of_week + timedelta(days=6)  # End of the current week (Sunday)
         start_of_last_week = start_of_week - timedelta(days=7)  # Start of the last week
@@ -362,7 +368,8 @@ class OrdersDashboardAPIView(APIView):
             )
 
             # Today's date
-            today = date.today()
+            pst_timezone = ZoneInfo("America/Los_Angeles")
+            today = datetime.now(pst_timezone).date()
             filtered_df = df[df['ship_date'] == pd.Timestamp(today)]
 
             # Pie chart data for commodity distribution

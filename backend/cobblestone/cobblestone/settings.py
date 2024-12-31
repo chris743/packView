@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'grower_portal',
     'shed_analysis',
     'rest_framework',
+    'sheduled_tasks',
     'corsheaders',
 ]
 

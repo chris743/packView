@@ -62,7 +62,7 @@ const BinInventory = () => {
         { field: "grade_id", headerName: "Grade", width: 150 },
         ...uniqueSizes.map((size) => ({
           field: size,
-          headerName: `Size ${size}`,
+          headerName: `${size}`,
           width: 100,
           align: "center",
           headerAlign: "center",
@@ -86,8 +86,17 @@ const BinInventory = () => {
       }
     };
 
+    // Fetch data immediately on component mount
     fetchData();
-  }, []);
+
+    // Set up an interval to fetch data every 5 minutes (300,000 ms)
+    const interval = setInterval(() => {
+      fetchData();
+    }, 10000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, [binInventoryEndpoint]); // Re-run if binInventoryEndpoint changes
 
   const renderTables = () => {
     if (!Object.keys(tableData).length) {
@@ -129,7 +138,7 @@ const BinInventory = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: "bold" }}>Grade</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Size</TableCell>
                 {commodityColumns[commodity]
                   .filter((col) => col.field !== "grade_id")
                   .map((col) => (

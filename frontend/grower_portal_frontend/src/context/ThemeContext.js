@@ -34,6 +34,13 @@ export const ThemeContextProvider = ({ children }) => {
         secondary: isDarkMode ? "#aaaaaa" : "#555555",
       },
       divider: isDarkMode ? "#333333" : "#eeeeee",
+      scrollbarWidth: "none", // Hide the scrollbar for firefox
+      '&::-webkit-scrollbar': {
+        display: 'none', // Hide the scrollbar for WebKit browsers (Chrome, Safari, Edge, etc.)
+      },
+      '&-ms-overflow-style:': {
+        display: 'none', // Hide the scrollbar for IE
+      },
     },
   });
 
