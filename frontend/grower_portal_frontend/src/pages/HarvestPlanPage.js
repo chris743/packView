@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Select, MenuItem, Button } from '@mui/material';
 import { fetchData, editData } from '../api/api';
 
+const formatDate = (date) => date.toISOString().split('T')[0];
+
+const parseDate = (dateStr) => new Date(dateStr);
+
 const getCurrentWeek = () => {
   const today = new Date();
-  const start = new Date(today.setDate(today.getDate() - today.getDay()));
-  const end = new Date(today.setDate(today.getDate() + 6));
+  const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
+  const lastDay = new Date(firstDay);
+  lastDay.setDate(firstDay.getDate() + 6);
   return {
-    start: start.toISOString().split('T')[0],
-    end: end.toISOString().split('T')[0],
+    start: formatDate(firstDay),
+    end: formatDate(lastDay),
   };
 };
 
@@ -16,6 +21,8 @@ const HarvestPlan = () => {
   const [data, setData] = useState([]);
   const [week, setWeek] = useState(getCurrentWeek());
   const [blocks, setBlocks] = useState([]);
+  const [editRows, setEditRows] = useState([]);
+
 
   useEffect(() => {
     loadData();
@@ -25,10 +32,30 @@ const HarvestPlan = () => {
   const loadData = async () => {
     try {
       const result = await fetchData(`planned-harvests?week=${week.start}`);
-      setData(result);
+      const sanitizedData = result.map((item) => ({
+        ...item,
+        days: item.days || {
+          sun: 0,
+          mon: 0,
+          tues: 0,
+          wed: 0,
+          thurs: 0,
+          fri: 0,
+          sat: 0,
+        },
+      }));
+      setData(sanitizedData);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
+  };
+  
+  const toggleEditMode = (rowId) => {
+    setEditRows((prev) =>
+      prev.includes(rowId)
+        ? prev.filter((id) => id !== rowId) // Remove from edit mode
+        : [...prev, rowId] // Add to edit mode
+    );
   };
 
   const loadBlocks = async () => {
@@ -40,28 +67,29 @@ const HarvestPlan = () => {
     }
   };
 
-  const handleEdit = (rowIndex, field, value) => {
-    console.log("value changed");
-    const updatedData = [...data];
-    
-    // Update the selected field
-    updatedData[rowIndex][field] = value;
-  
-    // Automatically update commodity and ranch when block is selected
-    if (field === 'block') {
-      const selectedBlock = blocks.find((b) => b.block_id === value);
-      if (selectedBlock) {
-        updatedData[rowIndex].commodity = selectedBlock.planted_commodity?.name || '';
-        updatedData[rowIndex].ranch = selectedBlock.ranch?.name || '';
-      } else {
-        updatedData[rowIndex].commodity = '';
-        updatedData[rowIndex].ranch = '';
+  const handleEdit = (rowId, field, value) => {
+    const updatedData = data.map((row) => {
+      if (row.id === rowId) {
+        if (field === 'grower_block') {
+          // Find the selected block
+          const selectedBlock = blocks.find((b) => b.block_id === value);
+          return {
+            ...row,
+            grower_block: value,
+            ranch: selectedBlock?.ranch?.name || '',
+            commodity: selectedBlock?.planted_commodity || '', // Update commodity
+          };
+        } else {
+          return {
+            ...row,
+            [field]: value,
+          };
+        }
       }
-    }
-  
+      return row;
+    });
     setData(updatedData);
   };
-  
 
   const handleSave = async () => {
     try {
@@ -95,14 +123,14 @@ const HarvestPlan = () => {
   };
 
   const renderCommodityRows = (commodityData) => {
-    return commodityData.map((block, index) => (
-      <TableRow key={index}>
-        <TableCell>{block.commodity}</TableCell>
-        <TableCell>{block.ranch}</TableCell>
+    return commodityData.map((block) => (
+      <TableRow key={block.id || Math.random()}>
+        <TableCell>{block.planted_commodity || 'N/A'}</TableCell>
+        <TableCell>{block.ranch || 'N/A'}</TableCell>
         <TableCell>
           <Select
-            value={block.block || ''}
-            onChange={(e) => handleEdit(index, 'block', e.target.value)}
+            value={block.grower_block || ''}
+            onChange={(e) => handleEdit(block.id, 'grower_block', e.target.value)}
           >
             {blocks.map((b) => (
               <MenuItem key={b.block_id} value={b.block_id}>
@@ -114,22 +142,35 @@ const HarvestPlan = () => {
         <TableCell>
           <TextField
             type="number"
-            value={block.planned_bins}
-            onChange={(e) => handleEdit(index, 'planned_bins', e.target.value)}
+            value={block.planned_bins || 0}
+            onChange={(e) => handleEdit(block.id, 'planned_bins', parseInt(e.target.value, 10))}
           />
         </TableCell>
         {['sun', 'mon', 'tues', 'wed', 'thurs', 'fri', 'sat'].map((day) => (
           <TableCell key={day}>
             <TextField
               type="number"
-              value={block.days[day] || ''}
-              onChange={(e) => handleEdit(index, day, e.target.value)}
+              value={block.days?.[day] || 0}
+              onChange={(e) => {
+                const newValue = parseInt(e.target.value, 10) || 0;
+                handleEdit(block.id, `days.${day}`, newValue);
+              }}
             />
           </TableCell>
         ))}
       </TableRow>
     ));
   };
+
+  const renderEmptyRow = () => (
+    <TableRow style={{ backgroundColor: 'transparent' }}>
+      {Array(10) // Assuming 10 columns in the table
+        .fill(null)
+        .map((_, index) => (
+          <TableCell key={index} style={{ border: 'none' }}></TableCell>
+        ))}
+    </TableRow>
+  );
 
   const getTotalsRow = (commodityData) => {
     const totals = commodityData.reduce(
@@ -144,7 +185,7 @@ const HarvestPlan = () => {
     );
 
     return (
-      <TableRow style={{ fontWeight: 'bold' }}>
+      <TableRow style={{ fontWeight: 'bold', backgroundColor: '#f9f9f9' }}>
         <TableCell colSpan={2}>Total</TableCell>
         <TableCell>{totals.planned_bins}</TableCell>
         {['sun', 'mon', 'tues', 'wed', 'thurs', 'fri', 'sat'].map((day) => (
@@ -153,6 +194,7 @@ const HarvestPlan = () => {
       </TableRow>
     );
   };
+
 
   const changeWeek = (direction) => {
     const start = new Date(week.start);
@@ -166,8 +208,8 @@ const HarvestPlan = () => {
   };
 
   const groupedData = data.reduce((acc, row) => {
-    if (!acc[row.commodity]) acc[row.commodity] = [];
-    acc[row.commodity].push(row);
+    if (!acc[row.planted_commodity]) acc[row.planted_commodity] = [];
+    acc[row.planted_commodity].push(row);
     return acc;
   }, {});
 
@@ -205,17 +247,13 @@ const HarvestPlan = () => {
           <TableBody>
             {Object.keys(groupedData).map((commodity) => (
               <React.Fragment key={commodity}>
-                <TableRow>
-                  <TableCell colSpan={10} style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
-                    {commodity}
-                  </TableCell>
-                </TableRow>
                 {renderCommodityRows(groupedData[commodity])}
                 {getTotalsRow(groupedData[commodity])}
+                {renderEmptyRow()} {/* Add empty row after totals */}
               </React.Fragment>
             ))}
             {getTotalsRow(data)}
-          </TableBody>
+          </TableBody>;
         </Table>
       </TableContainer>
 

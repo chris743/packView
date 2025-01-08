@@ -11,7 +11,7 @@ class Command(BaseCommand):
         scheduler = BackgroundScheduler()
 
         # Schedule the process_newest_file function
-        scheduler.add_job(process_newest_file, 'interval', minutes=120)
+        scheduler.add_job(process_newest_file, 'interval', minutes=15)
 
         # Schedule the email processing function
         def process_bin_inventory():
@@ -20,7 +20,7 @@ class Command(BaseCommand):
                 download_reports(mail)
                 combine_and_import_reports()
 
-        scheduler.add_job(process_bin_inventory, 'interval', minutes=1)
+        scheduler.add_job(process_bin_inventory, 'interval', minutes=9999)
 
         # Start the scheduler
         self.stdout.write("Starting the scheduler...")

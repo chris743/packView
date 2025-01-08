@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import Grower, Ranch, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
-
+from .models import Grower, Ranch, Pools, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
+import calendar
 class GrowerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Grower
@@ -33,14 +33,35 @@ class BlockSerializer(serializers.ModelSerializer):
 
 
 class PlannedHarvestSerializer(serializers.ModelSerializer):
-    grower_block = BlockSerializer(read_only=True)
-    grower_block_id = serializers.PrimaryKeyRelatedField(
-        queryset=Block.objects.all(), write_only=True, source='grower_block'
-    )
+    planted_commodity = serializers.CharField(source='grower_block.planted_commodity.name', read_only=True)
+    ranch = serializers.CharField(source='grower_block.ranch.name', read_only=True)
+    growerBlockName = serializers.CharField(source='grower_block.name', read_only=True)
+    day_of_week = serializers.SerializerMethodField()
 
     class Meta:
         model = PlannedHarvest
-        fields = '__all__'
+        fields = [
+            'id',
+            'grower_block',
+            'growerBlockName',
+            'planned_bins',
+            'contractor',
+            'harvesting_rate',
+            'hauler',
+            'hauling_rate',
+            'pool',
+            'harvest_date',
+            'planted_commodity',  # Include planted commodity
+            'ranch',  # Include ranch name for clarity
+            'day_of_week',
+        ]
+    
+    def get_day_of_week(self, obj):
+        if obj.harvest_date:
+            return calendar.day_name[obj.harvest_date.weekday()]
+        return None
+    
+
 
 
 class ReceivingsSerializer(serializers.ModelSerializer):
@@ -100,3 +121,8 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         fields = ['id', 'name', 'file', 'uploaded_at', 'folder']
+
+class PoolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pools
+        fields = '__all__'

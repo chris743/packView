@@ -13,6 +13,7 @@ import BinInventory from "./pages/DashboardPages/BinInventoryPage";
 import OrdersAnalysis from "./pages/DashboardPages/OrdersAnalysisPage";
 import { useThemeContext, ThemeContextProvider } from "./context/ThemeContext";
 import './App.css'
+import TestPage from "./pages/TestPage";
 
 const AppContent = () => {
   const { isDarkMode } = useThemeContext();
@@ -56,6 +57,7 @@ const AppContent = () => {
               <Route path="/analysis/capacity" element={<CapacityPage />} />
               <Route path="/analysis/bin-inventory" element={<BinInventory />} />
               <Route path="/analysis/order-analysis" element={<OrdersAnalysis />} />
+              <Route path="/test" element={<TestPage/>} />
             </Routes>
           </Router>
         </Box>

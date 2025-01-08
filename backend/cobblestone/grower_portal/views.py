@@ -14,7 +14,8 @@ from .models import (Grower,
                      LaborContractors,
                      TruckingContractors,
                      Folder,
-                     File
+                     File,
+                     Pools,
                      )
 from .serializers import (
     GrowerSerializer,
@@ -28,7 +29,8 @@ from .serializers import (
     VarietiesSerializer,
     TruckingContractorSerializer,
     FolderSerializer,
-    FileSerializer
+    FileSerializer,
+    PoolSerializer
 )
 
 class GrowerViewSet(ModelViewSet):
@@ -63,16 +65,13 @@ class CommodityViewSet(ModelViewSet):
     queryset = Commodity.objects.all()
     serializer_class = CommoditySerializer
 
-
 class PlannedHarvestViewSet(ModelViewSet):
     queryset = PlannedHarvest.objects.all()
     serializer_class = PlannedHarvestSerializer
 
-
 class ReceivingsViewSet(ModelViewSet):
     queryset = Receivings.objects.all()
     serializer_class = ReceivingsSerializer
-
 
 class ProductionRunsViewSet(ModelViewSet):
     queryset = ProductionRuns.objects.all()
@@ -139,3 +138,7 @@ class FileViewSet(ModelViewSet):
             except Folder.DoesNotExist:
                 return self.queryset.none()
         return self.queryset.none()
+    
+class PoolViewSet(ModelViewSet):
+    queryset = Pools.objects.all()
+    serializer_class = PoolSerializer

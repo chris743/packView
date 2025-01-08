@@ -39,15 +39,26 @@ class Commodity (models.Model):
     def __str__(self):
         return f"{self.name}"
     
+    
 class Varieties (models.Model):
     name = models.CharField(max_length=30)
     commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name="commodity")
     
     def __str__(self):
         return self.name
+    
+class Pools (models.Model):
+    id = models.CharField(unique=True, primary_key=True, max_length=15)
+    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name="pool_commodity")
+    description = models.TextField(null=True, blank=True)
+    openDate = models.DateField()
+    closeDate = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.id}"
 
 class Block(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, null=True, blank=True)
     block_id = models.IntegerField(null=True, blank=False)
     ranch = models.ForeignKey(Ranch, on_delete=models.CASCADE, related_name="blocks")
     size = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # e.g., acres
@@ -88,15 +99,15 @@ class TruckingContractors(models.Model):
 
 class PlannedHarvest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False, max_length=36)
-    name = models.CharField(null=False, max_length=100)
     grower_block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name="planned_harvests")  # Unique related_name
     planned_bins = models.IntegerField(null=False, default=0)
     contractor = models.ForeignKey(LaborContractors, on_delete=models.CASCADE, related_name='labor_contractors', null=True)
     harvesting_rate = models.FloatField(null=True)
     hauler = models.ForeignKey(TruckingContractors, on_delete=models.CASCADE, related_name='trucking_company', null=True)
     hauling_rate = models.FloatField(null=True)
-    pool_id = models.CharField(null=False, max_length=10)
+    pool = models.ForeignKey(Pools, on_delete=models.CASCADE, related_name="harvest_pool")
     harvest_date = models.DateField(null=False)
+    notes_general = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.grower_block} - {self.harvest_date}"

@@ -11,7 +11,8 @@ from .views import (
     TruckingContractorViewSet,
     VarietiesViewSet,
     FolderViewSet,
-    FileViewSet
+    FileViewSet,
+    PoolViewSet
 )
 
 router = DefaultRouter()
@@ -27,5 +28,6 @@ router.register(r'trucking_contractors', TruckingContractorViewSet)
 router.register(r'varieties', VarietiesViewSet)
 router.register(r'folders', FolderViewSet, basename='folder')
 router.register(r'files', FileViewSet, basename='file')
+router.register(r'pools', PoolViewSet)
 
 urlpatterns = router.urls

@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Grower, Ranch, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
-
+from .models import Grower, Ranch, Pools, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
 
 @admin.register(Commodity)
 class CommodityAdmin(admin.ModelAdmin):
@@ -12,13 +11,11 @@ class GrowerAdmin(admin.ModelAdmin):
     list_display = ("name", "grower_id", "grower_contact_email", "grower_contact_phone")
     search_fields = ("name",)
 
-
 @admin.register(Ranch)
 class RanchAdmin(admin.ModelAdmin):
     list_display = ("name", "grower", "location")
     search_fields = ("name", "grower__name")
     list_filter = ("grower",)
-
 
 @admin.register(Block)
 class BlockAdmin(admin.ModelAdmin):
@@ -26,11 +23,10 @@ class BlockAdmin(admin.ModelAdmin):
     search_fields = ("name", "ranch__name", "planted_commodity__name")
     list_filter = ("ranch", "planted_commodity")
 
-
 @admin.register(PlannedHarvest)
 class PlannedHarvestAdmin(admin.ModelAdmin):
-    list_display = ("name", "grower_block", "planned_bins", "harvest_date")  # Corrected 'block' to 'grower_block'
-    search_fields = ("name", "grower_block__name")
+    list_display = ("grower_block", "planned_bins", "harvest_date")  # Corrected 'block' to 'grower_block'
+    search_fields = ("grower_block__name",)
     list_filter = ("harvest_date",)
 
 @admin.register(ProductionRuns)
@@ -38,11 +34,10 @@ class ProductionRunsAdmin(admin.ModelAdmin):
     list_display = ("name", "grower_block", "bins")  # Corrected 'block' to 'grower_block'
     search_fields = ("name", "grower_block__name")
 
-
 @admin.register(Receivings)
 class ReceivingsAdmin(admin.ModelAdmin):
-    list_display = ("receipt_id", "harvest__name", "qty_received")  # Corrected 'block' to 'grower_block'
-    search_fields = ("receipt_id", "harvest__name")
+    list_display = ("receipt_id", "qty_received")  # Corrected 'block' to 'grower_block'
+    search_fields = ("receipt_id", )
 
 @admin.register(Varieties)
 class VarietiesAdmin(admin.ModelAdmin):
@@ -68,3 +63,7 @@ class FileAdmin(admin.ModelAdmin):
     list_display=('folder', 'name', 'file', 'uploaded_at')
     search_fields=('name',)
     
+@admin.register(Pools)
+class PoolsAdmin(admin.ModelAdmin):
+    list_display=('id', 'commodity', 'description', 'openDate', 'closeDate')
+    search_fields=('id',)

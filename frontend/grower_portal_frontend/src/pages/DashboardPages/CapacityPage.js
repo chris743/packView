@@ -136,7 +136,7 @@ const Dashboard = () => {
         {/* Giro */}
         <div style={{ textAlign: "center" }}>
           <GaugeChart title="Giro Capacity" data={gauge} style="giro" />
-          <div style={{marginTop:"10px"}}>
+          <div style={{marginTop:"10px", minHeight: "450px"}}>
           <ReusableTable columns={columns} data={topProducts.giro} />
           </div>
           <div>
@@ -147,7 +147,7 @@ const Dashboard = () => {
         {/* Fox */}
         <div style={{ textAlign: "center" }}>
           <GaugeChart title="Fox Capacity" data={gauge} style="fox" />
-          <div style={{ marginTop:"10px"}}>
+          <div style={{ marginTop:"10px", minHeight: "450px"}}>
           <ReusableTable columns={columns} data={topProducts.fox} />
           </div>
           <div>
@@ -158,7 +158,7 @@ const Dashboard = () => {
         {/* Vex */}
         <div style={{ textAlign: "center" }}>
           <GaugeChart title="Vexar Capacity" data={gauge} style="vex" />
-          <div style={{ marginTop:"10px"}}>
+          <div style={{ marginTop:"10px", minHeight: "450px"}}>
           <ReusableTable columns={columns} data={topProducts.vex} />
           </div>
           <div>
@@ -169,7 +169,7 @@ const Dashboard = () => {
         {/* Bulk */}
         <div style={{ textAlign: "center" }}>
           <GaugeChart title="Bulk Capacity" data={gauge} style="bulk" />
-          <div style={{ marginTop:"10px"}}>
+          <div style={{ marginTop:"10px", minHeight: "450px"}}>
           <ReusableTable columns={columns} data={topProducts.bulk} />
           </div>
           <div>

@@ -20,10 +20,15 @@ import ListSubheader from '@mui/material/ListSubheader';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
+import ParkIcon from '@mui/icons-material/Park';
+import BuildIcon from '@mui/icons-material/Build';
+import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import AgricultureIcon from '@mui/icons-material/Agriculture';
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [dashboardsOpen, setDashboardsOpen] = useState(false);
+    const [maintinenceOpen, setMaintinenceOpen] = useState(false);
 
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
@@ -33,6 +38,9 @@ const Sidebar = () => {
         setDashboardsOpen(!dashboardsOpen);
     };
 
+    const toggleMaintinence = () => {
+        setMaintinenceOpen(!maintinenceOpen);
+    };
     return (
     
         <Drawer
@@ -71,17 +79,19 @@ const Sidebar = () => {
                     </ListItemIcon>
                     {!isCollapsed && <ListItemText primary="Home" />}
                 </ListItem>
-                <ListItem button component="a" href="/commodities"sx={{ textDecoration: "none", color: "inherit" }}>
+
+                <ListItem button component="a" href="/harvest-plan" sx={{ textDecoration: "none", color: "inherit" }}>
                     <ListItemIcon>
-                        <InventoryIcon />
+                        <AgricultureIcon />
                     </ListItemIcon>
-                    {!isCollapsed && <ListItemText primary="Commodities" />}
+                    {!isCollapsed && <ListItemText primary="Harvest Plan" />}
                 </ListItem>
-                <ListItem button component="a" href="/growers"sx={{ textDecoration: "none", color: "inherit" }}>
+
+                <ListItem button component="a" href="/process-plan" sx={{ textDecoration: "none", color: "inherit" }}>
                     <ListItemIcon>
-                        <GroupIcon />
+                        <PrecisionManufacturingIcon />
                     </ListItemIcon>
-                    {!isCollapsed && <ListItemText primary="Growers" />}
+                    {!isCollapsed && <ListItemText primary="Process Plan" />}
                 </ListItem>
 
                 {/* Dashboards Dropdown */}
@@ -107,6 +117,28 @@ const Sidebar = () => {
                         <ListItem button component="a" href="/analysis/order-analysis" sx={{ pl: 4, textDecoration: "none", color: "inherit" }}>
                             <ShowChartIcon style={{ paddingRight: "5px"}}/>
                             {!isCollapsed && <ListItemText primary="Orders" />}
+                        </ListItem>
+                    </List>
+                </Collapse>
+                {/*Maintinence Dropdow*/}
+                <ListItem button onClick={toggleMaintinence}>
+                    <ListItemIcon>
+                        <BuildIcon />
+                    </ListItemIcon>
+                    {!isCollapsed && (
+                        <ListItemText primary="Maintinence" />
+                    )}
+                    {!isCollapsed && (maintinenceOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                </ListItem>
+                <Collapse in={maintinenceOpen} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                        <ListItem button component="a" href="/growers" sx={{ pl: 4, textDecoration: "none", color: "inherit" }}>
+                            <GroupIcon style={{ paddingRight: "5px"}}/>
+                            {!isCollapsed && <ListItemText primary="Growers" />}
+                        </ListItem>
+                        <ListItem button component="a" href="/commodities" sx={{ pl: 4, textDecoration: "none", color: "inherit" }}>
+                            <ParkIcon style={{ paddingRight: "5px"}}/>
+                            {!isCollapsed && <ListItemText primary="Commodities" />}
                         </ListItem>
                     </List>
                 </Collapse>

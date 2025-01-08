@@ -12,14 +12,11 @@ import {
 const endpoint = "growers"
 
 const GrowersPage = () => {
-    const [growers, setGrowers] = useState([]);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [currentGrower, setCurrentGrower] = useState(null);
-    const [ranches, setRanches] = useState([]);
+    const [data, setData] = useState([]);
 
-    const loadGrowers = async () => {
+    const loadData = async () => {
         const data = await fetchData(endpoint);
-        setGrowers(data);
+        setData(data);
     };
 
     useEffect(() => {
