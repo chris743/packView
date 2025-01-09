@@ -96,15 +96,30 @@ class TruckingContractors(models.Model):
     office_phone = models.IntegerField(null=True)
     mailing_address = models.CharField(null=True, max_length=100)
 
+class FieldContractors(models.Model):
+    name = models.CharField(null=False, max_length=100)
+    primary_contact_name = models.CharField(null=False, max_length=50)
+    primary_contact_phone = models.IntegerField(null=True)
+    office_phone = models.IntegerField(null=True)
+    mailing_address = models.CharField(null=True, max_length=100)
+    provides_trucking = models.BooleanField(null=True, blank=True)
+    provides_picking = models.BooleanField(null=True)
+    provides_forklift = models.BooleanField(null=True)
+
+    def __str__(self):
+        return self.name
+
 
 class PlannedHarvest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False, max_length=36)
     grower_block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name="planned_harvests")  # Unique related_name
     planned_bins = models.IntegerField(null=False, default=0)
-    contractor = models.ForeignKey(LaborContractors, on_delete=models.CASCADE, related_name='labor_contractors', null=True)
+    contractor = models.ForeignKey(FieldContractors, on_delete=models.CASCADE, related_name='labor_contractors', null=True)
     harvesting_rate = models.FloatField(null=True)
-    hauler = models.ForeignKey(TruckingContractors, on_delete=models.CASCADE, related_name='trucking_company', null=True)
+    hauler = models.ForeignKey(FieldContractors, on_delete=models.CASCADE, related_name='trucking_company', null=True)
     hauling_rate = models.FloatField(null=True)
+    forklift_contractor = models.ForeignKey(FieldContractors, on_delete=models.CASCADE, related_name="forklift_contractor", null=True)
+    forklift_rate = models.FloatField(null=True)
     pool = models.ForeignKey(Pools, on_delete=models.CASCADE, related_name="harvest_pool")
     harvest_date = models.DateField(null=False)
     notes_general = models.TextField(null=True, blank=True)

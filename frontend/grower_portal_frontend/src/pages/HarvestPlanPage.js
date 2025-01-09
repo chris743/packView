@@ -1,272 +1,279 @@
-import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Select, MenuItem, Button } from '@mui/material';
-import { fetchData, editData } from '../api/api';
+import React, { useState, useEffect } from "react";
+import { fetchData } from "../api/api";
+import ScheduleTable from "../components/HarvestPlanWeeklyTable";
+import { Button, Box, Fab, Menu, MenuItem } from "@mui/material";
+import AdvancedModal from "../components/HarvestPlanModal";
+import dayjs from "dayjs";
+import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
+import html2canvas from "html2canvas";
+import SaveIcon from "@mui/icons-material/Save";
 
-const formatDate = (date) => date.toISOString().split('T')[0];
 
-const parseDate = (dateStr) => new Date(dateStr);
+const endpoint = "planned-harvests";
 
-const getCurrentWeek = () => {
-  const today = new Date();
-  const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
-  const lastDay = new Date(firstDay);
-  lastDay.setDate(firstDay.getDate() + 6);
-  return {
-    start: formatDate(firstDay),
-    end: formatDate(lastDay),
-  };
-};
-
-const HarvestPlan = () => {
+const TestPage = () => {
   const [data, setData] = useState([]);
-  const [week, setWeek] = useState(getCurrentWeek());
-  const [blocks, setBlocks] = useState([]);
-  const [editRows, setEditRows] = useState([]);
+  const [currentWeek, setCurrentWeek] = useState(dayjs().startOf("week"));
+  const [ selectedRow, setSelectedRow ] = useState(null);
+  const [ anchorEl, setAnchorEl ] = useState(null);
 
+  const loadData = async () => {
+    const apiData = await fetchData(endpoint);
+    setData(apiData);
+  };
+
+  const handleSave = (updatedRow) => {
+    // Save the updated data (optional API call here)
+    setData((prevData) =>
+        prevData.map((row) =>
+          row.id === updatedRow.id ? updatedRow : row
+        )
+      );
+      setSelectedRow(null); // Close the modal
+  };
 
   useEffect(() => {
     loadData();
-    loadBlocks();
-  }, [week]);
+  }, []);
 
-  const loadData = async () => {
-    try {
-      const result = await fetchData(`planned-harvests?week=${week.start}`);
-      const sanitizedData = result.map((item) => ({
-        ...item,
-        days: item.days || {
-          sun: 0,
-          mon: 0,
-          tues: 0,
-          wed: 0,
-          thurs: 0,
-          fri: 0,
-          sat: 0,
-        },
-      }));
-      setData(sanitizedData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
-  
-  const toggleEditMode = (rowId) => {
-    setEditRows((prev) =>
-      prev.includes(rowId)
-        ? prev.filter((id) => id !== rowId) // Remove from edit mode
-        : [...prev, rowId] // Add to edit mode
-    );
-  };
+  const transformData = (apiData) => {
+    const getDayColumn = (date) => {
+      const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+      const dayIndex = new Date(date).getDay();
+      return days[dayIndex];
+    };
 
-  const loadBlocks = async () => {
-    try {
-      const result = await fetchData('blocks');
-      setBlocks(result);
-    } catch (error) {
-      console.error('Error fetching blocks:', error);
-    }
-  };
+    return apiData.map((item) => {
+      const dayColumn = getDayColumn(item.harvest_date);
 
-  const handleEdit = (rowId, field, value) => {
-    const updatedData = data.map((row) => {
-      if (row.id === rowId) {
-        if (field === 'grower_block') {
-          // Find the selected block
-          const selectedBlock = blocks.find((b) => b.block_id === value);
-          return {
-            ...row,
-            grower_block: value,
-            ranch: selectedBlock?.ranch?.name || '',
-            commodity: selectedBlock?.planted_commodity || '', // Update commodity
-          };
-        } else {
-          return {
-            ...row,
-            [field]: value,
-          };
-        }
-      }
+      const row = {
+        id: item.id,
+        commodity: item.planted_commodity,
+        ranch_name: item.ranch,
+        growerBlockName: item.growerBlockName,
+        planned_bins: item.planned_bins,
+        size: item.size,
+        bins_received: item.received_bins,
+        sun: null,
+        mon: null,
+        tue: null,
+        wed: null,
+        thu: null,
+        fri: null,
+        sat: null,
+        balance: item.planned_bins - item.received_bins || 0,
+        grower_block: item.grower_block,
+        harvest_date: item.harvest_date,
+        pool: item.pool,
+        hauler: item.hauler,
+        hauling_rate: item.hauling_rate,
+        contractor: item.contractor,
+        harvesting_rate: item.harvesting_rate,
+        forklift_contractor: item.forklift_contractor,
+        forklift_rate: item.forklift_rate,
+        notes_general: item.notes_general,
+      };
+
+      row[dayColumn] = item.planned_bins;
       return row;
     });
-    setData(updatedData);
   };
 
-  const handleSave = async () => {
-    try {
-      await Promise.all(
-        data.map((item) => editData('planned-harvests', item.id, item))
-      );
-      alert('Data saved successfully!');
-    } catch (error) {
-      console.error('Error saving data:', error);
-    }
-  };
+  const getCurrentWeekData = () => {
+    const startOfWeek = currentWeek.toDate();
+    const endOfWeek = currentWeek.add(6, "day").toDate();
 
-  const handleAddRow = () => {
-    const newRow = {
-      id: null,
-      commodity: '',
-      ranch: '',
-      block: '',
-      planned_bins: 0,
-      days: {
-        sun: 0,
-        mon: 0,
-        tues: 0,
-        wed: 0,
-        thurs: 0,
-        fri: 0,
-        sat: 0,
-      },
-    };
-    setData([...data, newRow]);
-  };
-
-  const renderCommodityRows = (commodityData) => {
-    return commodityData.map((block) => (
-      <TableRow key={block.id || Math.random()}>
-        <TableCell>{block.planted_commodity || 'N/A'}</TableCell>
-        <TableCell>{block.ranch || 'N/A'}</TableCell>
-        <TableCell>
-          <Select
-            value={block.grower_block || ''}
-            onChange={(e) => handleEdit(block.id, 'grower_block', e.target.value)}
-          >
-            {blocks.map((b) => (
-              <MenuItem key={b.block_id} value={b.block_id}>
-                {b.name} ({b.ranch?.name || 'No Ranch'})
-              </MenuItem>
-            ))}
-          </Select>
-        </TableCell>
-        <TableCell>
-          <TextField
-            type="number"
-            value={block.planned_bins || 0}
-            onChange={(e) => handleEdit(block.id, 'planned_bins', parseInt(e.target.value, 10))}
-          />
-        </TableCell>
-        {['sun', 'mon', 'tues', 'wed', 'thurs', 'fri', 'sat'].map((day) => (
-          <TableCell key={day}>
-            <TextField
-              type="number"
-              value={block.days?.[day] || 0}
-              onChange={(e) => {
-                const newValue = parseInt(e.target.value, 10) || 0;
-                handleEdit(block.id, `days.${day}`, newValue);
-              }}
-            />
-          </TableCell>
-        ))}
-      </TableRow>
-    ));
-  };
-
-  const renderEmptyRow = () => (
-    <TableRow style={{ backgroundColor: 'transparent' }}>
-      {Array(10) // Assuming 10 columns in the table
-        .fill(null)
-        .map((_, index) => (
-          <TableCell key={index} style={{ border: 'none' }}></TableCell>
-        ))}
-    </TableRow>
-  );
-
-  const getTotalsRow = (commodityData) => {
-    const totals = commodityData.reduce(
-      (acc, block) => {
-        acc.planned_bins += block.planned_bins;
-        ['sun', 'mon', 'tues', 'wed', 'thurs', 'fri', 'sat'].forEach((day) => {
-          acc[day] += block.days[day] || 0;
-        });
-        return acc;
-      },
-      { planned_bins: 0, sun: 0, mon: 0, tues: 0, wed: 0, thurs: 0, fri: 0, sat: 0 }
-    );
-
-    return (
-      <TableRow style={{ fontWeight: 'bold', backgroundColor: '#f9f9f9' }}>
-        <TableCell colSpan={2}>Total</TableCell>
-        <TableCell>{totals.planned_bins}</TableCell>
-        {['sun', 'mon', 'tues', 'wed', 'thurs', 'fri', 'sat'].map((day) => (
-          <TableCell key={day}>{totals[day]}</TableCell>
-        ))}
-      </TableRow>
-    );
-  };
-
-
-  const changeWeek = (direction) => {
-    const start = new Date(week.start);
-    const newStart = new Date(start.setDate(start.getDate() + direction * 7));
-    const newEnd = new Date(newStart);
-    newEnd.setDate(newEnd.getDate() + 6);
-    setWeek({
-      start: newStart.toISOString().split('T')[0],
-      end: newEnd.toISOString().split('T')[0],
+    const filteredData = data.filter((item) => {
+      const harvestDate = new Date(item.harvest_date);
+      return harvestDate >= startOfWeek && harvestDate <= endOfWeek;
     });
+
+    return transformData(filteredData);
   };
 
-  const groupedData = data.reduce((acc, row) => {
-    if (!acc[row.planted_commodity]) acc[row.planted_commodity] = [];
-    acc[row.planted_commodity].push(row);
-    return acc;
-  }, {});
+  const handleDownloadPDF = async () => {
+    const tableElement = document.getElementById("schedule-table");
+  
+    // Save original background color
+    const originalBackgroundColor = tableElement.style.backgroundColor;
+  
+    // Set background color to white
+    tableElement.style.backgroundColor = "#ffffff";
+  
+    // Generate PDF
+    const canvas = await html2canvas(tableElement, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+  
+    const pdf = new jsPDF("landscape");
+    const imgWidth = pdf.internal.pageSize.getWidth(); // Full width of the PDF page
+    const imgHeight = (canvas.height * imgWidth) / canvas.width; // Maintain aspect ratio
+  
+    // Adjust image position to remove margins
+    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+    pdf.save(`Schedule_${currentWeek.format("YYYY-MM-DD")}.pdf`);
+  
+    // Revert to original background color
+    tableElement.style.backgroundColor = originalBackgroundColor;
+  };
+
+  const handleExportExcel = () => {
+    const currentWeekData = getCurrentWeekData();
+
+    // Map data to Excel-compatible format
+    const excelData = currentWeekData.map((item) => ({
+      Commodity: item.planted_commodity,
+      Ranch: item.ranch,
+      Block: item.growerBlockName,
+      "Planned Bins": item.planned_bins,
+      Size: item.size,
+      "Bins Received": item.received_bins,
+      Sun: item.sun || 0,
+      Mon: item.mon || 0,
+      Tue: item.tue || 0,
+      Wed: item.wed || 0,
+      Thu: item.thu || 0,
+      Fri: item.fri || 0,
+      Sat: item.sat || 0,
+      Balance: item.planned_bins - item.received_bins || 0,
+    }));
+
+    // Create a workbook and worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Schedule");
+
+    // Save the workbook as an .xlsx file
+    XLSX.writeFile(workbook, `Schedule_${currentWeek.format("YYYY-MM-DD")}.xlsx`);
+  };
+
+  const handleRowClick = (row) =>{
+    setSelectedRow(row);
+  };
+
+  const handleWeekChange = (direction) => {
+    setCurrentWeek((prevWeek) =>
+      direction === "prev"
+        ? prevWeek.subtract(7, "day")
+        : prevWeek.add(7, "day")
+    );
+  };
+
+  const columns = [
+    { field: "commodity", headerName: "commodity"},
+    { field: "ranch_name", headerName: "Ranch" },
+    { field: "growerBlockName", headerName: "Block" },
+    { field: "planned_bins", headerName: "Est. Bins" },
+    { field: "size", headerName: "Size" },
+    { field: "bins_received", headerName: "Bins Received" },
+    { field: "sun", headerName: "Sun" },
+    { field: "mon", headerName: "Mon" },
+    { field: "tue", headerName: "Tue" },
+    { field: "wed", headerName: "Wed" },
+    { field: "thu", headerName: "Thu" },
+    { field: "fri", headerName: "Fri" },
+    { field: "sat", headerName: "Sat" },
+    { field: "balance", headerName: "Balance" },
+  ];
+
+  const topHeaderColumns = [
+    { field: 'commodity', headerName: "", span: 1 },
+    { field: 'text', headerName: "Projected Weekly Harvest Schedule", span: 5 },
+    { field: "sun", headerName: currentWeek.format("DD-MMM"), span: 1},
+    { field: "mon", headerName: currentWeek.add(1, "day").format("DD-MMM"), span: 1 },
+    { field: "tue", headerName: currentWeek.add(2, "day").format("DD-MMM"), span: 1 },
+    { field: "wed", headerName: currentWeek.add(3, "day").format("DD-MMM"), span: 1 },
+    { field: "thu", headerName: currentWeek.add(4, "day").format("DD-MMM"), span: 1 },
+    { field: "fri", headerName: currentWeek.add(5, "day").format("DD-MMM"), span: 1 },
+    { field: "sat", headerName: currentWeek.add(6, "day").format("DD-MMM"), span: 1 },
+    { field: "blank", headerName: " ", span: 1 },
+
+  ]
+
+  const modalClose = () => {
+    setSelectedRow(null);
+    loadData();
+  }
+
+  const handleOpenMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <Button onClick={() => changeWeek(-1)}>Previous Week</Button>
-        <h2>Harvest Plan ({week.start} - {week.end})</h2>
-        <Button onClick={() => changeWeek(1)}>Next Week</Button>
-      </div>
+    <Box>
+      {/* Navigation Buttons */}
+      <Box display="flex" flex-direction="row" justifyContent="space-between">
+        <Box display="flex" justifyContent="flex-start" mb={2}>
+            <Button variant="outlined" onClick={handleRowClick} > New Line </Button>
+        </Box>
+        <Box display="flex" justifyContent="flex-end" mb={2}>
+            <Button onClick={() => handleWeekChange("prev")}>Previous Week</Button>
+            <Button onClick={() => handleWeekChange("next")}>Next Week</Button>
+        </Box>
+      </Box>
 
-      <Button
-        variant="contained"
-        color="secondary"
-        style={{ marginBottom: '20px' }}
-        onClick={handleAddRow}
-      >
-        Add Row
-      </Button>
+      {/* Schedule Table */}
+      <Box id="schedule-table">
+        <ScheduleTable 
+        data={getCurrentWeekData()} 
+        columns={columns} 
+        topheader={topHeaderColumns} 
+        weekStart={currentWeek.toISOString()}
+        onRowClick={handleRowClick}
+        />
+      </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Commodity</TableCell>
-              <TableCell>Ranch</TableCell>
-              <TableCell>Block</TableCell>
-              <TableCell>Planned Bins</TableCell>
-              {['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'].map((day) => (
-                <TableCell key={day}>{day}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
+    {/* Advanced Modal */}
+    {selectedRow && (
+    <AdvancedModal
+        open={Boolean(selectedRow)}
+        onClose={modalClose}
+        rowData={selectedRow}
+        onSave={handleSave}
+        weekStart={currentWeek.toISOString()}
+    />
+      )}
 
-          <TableBody>
-            {Object.keys(groupedData).map((commodity) => (
-              <React.Fragment key={commodity}>
-                {renderCommodityRows(groupedData[commodity])}
-                {getTotalsRow(groupedData[commodity])}
-                {renderEmptyRow()} {/* Add empty row after totals */}
-              </React.Fragment>
-            ))}
-            {getTotalsRow(data)}
-          </TableBody>;
-        </Table>
-      </TableContainer>
-
-      <Button
-        variant="contained"
+      <Fab
         color="primary"
-        style={{ marginTop: '20px' }}
-        onClick={handleSave}
+        aria-label="save"
+        onClick={handleOpenMenu}
+        sx={{
+          position: "fixed",
+          bottom: 16,
+          right: 16,
+          zIndex: 1000,
+        }}
       >
-        Save Changes
-      </Button>
-    </div>
+        <SaveIcon />
+      </Fab>
+
+      {/* Dropdown Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleCloseMenu}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+      >
+        <MenuItem onClick={handleDownloadPDF}>Export as PDF</MenuItem>
+        <MenuItem onClick={handleExportExcel}>Export as Excel</MenuItem>
+      </Menu>
+
+    </Box>
   );
 };
 
-export default HarvestPlan;
+export default TestPage;
+
+

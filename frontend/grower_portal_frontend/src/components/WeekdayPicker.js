@@ -33,7 +33,7 @@ const WeekdayPicker = ({ selectedDate, onSelectDate, weekStart }) => {
               m: 0.5,
               height: 60,
               textTransform: "none",
-              fontSize: "14px",
+              fontSize: "12px",
               fontWeight: formatDate(selectedDate) === dateForDay.format("YYYY-MM-DD") ? "bold" : "normal",
             }}
             onClick={() => onSelectDate(dateForDay.toISOString())}

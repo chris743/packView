@@ -16,6 +16,7 @@ from .models import (Grower,
                      Folder,
                      File,
                      Pools,
+                     FieldContractors,
                      )
 from .serializers import (
     GrowerSerializer,
@@ -30,7 +31,8 @@ from .serializers import (
     TruckingContractorSerializer,
     FolderSerializer,
     FileSerializer,
-    PoolSerializer
+    PoolSerializer,
+    FieldContractorsSerializer
 )
 
 class GrowerViewSet(ModelViewSet):
@@ -80,6 +82,10 @@ class ProductionRunsViewSet(ModelViewSet):
 class LaborContractorsViewSet(ModelViewSet):
     queryset = LaborContractors.objects.all()
     serializer_class = LaborContractorSerializer
+
+class FieldContractorsViewSet(ModelViewSet):
+    queryset = FieldContractors.objects.all()
+    serializer_class = FieldContractorsSerializer
 
 class TruckingContractorViewSet(ModelViewSet):
     queryset = TruckingContractors.objects.all()

@@ -8,7 +8,7 @@ import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
 
-const ScheduleTable = ({ columns, topheader, data, onRowClick }) => {
+const DailyHarvestTable = ({ columns, topheader, data, onRowClick }) => {
   const theme = useTheme();
 
   const headerStyles = {
@@ -27,23 +27,29 @@ const ScheduleTable = ({ columns, topheader, data, onRowClick }) => {
         }
         groupedData[commodity].push(row);
     });
+
+    Object.keys(groupedData).forEach((commodity) => {
+        groupedData[commodity].sort((a, b) => (new Date(a.harvest_date) - new Date (b.harvest_date)))
+    })
     return groupedData;
   }
 
-  const calculateTotals = () => {
+  const calculateTotals = (rows = data) => {
     const totals = {};
     columns.forEach((column) => {
-        if (["est_bins", "bins_received", "sun", "mon", "tue", "wed", "thu", "fri", "sat"].includes(column.field)) {
-            totals[column.field] = data.reduce((sum, row) => sum + (row[column.field] || 0), 0);
-        } else if (["grower_block_name"].includes(column.field)){
-            totals[column.field] = "TOTALS"
-        }
-        else {
-            totals[column.field] = "";
-        }
+      if (["est_bins", "bins_received", "sun", "mon", "tue", "wed", "thu", "fri", "sat"].includes(column.field)) {
+        totals[column.field] = rows.reduce((sum, row) => sum + (row[column.field] || 0), 0);
+      } else if (["grower_block_name"].includes(column.field)) {
+        totals[column.field] = "TOTALS";
+      } else {
+        totals[column.field] = "";
+      }
     });
     return totals;
-  }
+  };
+  
+  // Calculate grand totals for all data
+  const grandTotals = calculateTotals();
 
   const commodityColors = {
     navel: "#FFA500", // Orange
@@ -55,20 +61,17 @@ const ScheduleTable = ({ columns, topheader, data, onRowClick }) => {
 
   const groupedData = groupByCommodity();
 
+  const rowStyles = {
+    padding: "4px 8px", // Reduce padding
+    fontSize: "0.75rem", // Smaller font size for rows
+    lineHeight: "1rem", // Reduce line height
+  };
+
   return (
     <>
     <TableContainer component={Paper}>
       <Table size="small" aria-label="dense table">
         <TableHead>
-          {/* Header row with spanning columns */}
-          <TableRow>
-            {topheader.map((topheader) => (
-                <TableCell key={topheader.field} style={headerStyles} colSpan={topheader.span}>
-                    {topheader.headerName}
-                </TableCell>
-            ))}
-          </TableRow>
-
           {/* Header row for individual column names */}
           <TableRow>
             {columns.map((column) => (
@@ -98,6 +101,7 @@ const ScheduleTable = ({ columns, topheader, data, onRowClick }) => {
                     <TableCell
                       key={column.field}
                       sx={{
+                        ...rowStyles,
                         color: theme.palette.text.primary,
                         textAlign: "center",
                         backgroundColor: column.field === "commodity"
@@ -122,9 +126,10 @@ const ScheduleTable = ({ columns, topheader, data, onRowClick }) => {
                   <TableCell
                     key={column.field}
                     sx={{
-                      color: "black",
-                      fontWeight: "bold",
-                      textAlign: "center",
+                        ...rowStyles,
+                        color: "black",
+                        fontWeight: "bold",
+                        textAlign: "center",
                     }}
                   >
                     {calculateTotals(rows)[column.field]}
@@ -140,6 +145,25 @@ const ScheduleTable = ({ columns, topheader, data, onRowClick }) => {
               </TableRow>
             </React.Fragment>
           ))}
+          <TableRow sx={{
+            backgroundColor: theme.palette.grey[400],
+          }}>
+            {columns.map((column) => (
+                <TableCell
+                    key={column.field}
+                    sx={{
+                        color: "black",
+                        fontWeight: "bold",
+                        textAlign: "center",
+                    }}
+                    >
+                        {grandTotals[column.field]}
+                    </TableCell>
+                    )
+                )
+            }
+
+          </TableRow>
         </TableBody>
       </Table>
     </TableContainer>
@@ -148,4 +172,4 @@ const ScheduleTable = ({ columns, topheader, data, onRowClick }) => {
   );
 };
 
-export default ScheduleTable;
+export default DailyHarvestTable;

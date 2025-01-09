@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Grower, Ranch, Pools, Block, Commodity, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
+from .models import Grower, Ranch, Pools, Block, Commodity, FieldContractors, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
 import calendar
 class GrowerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,6 +54,9 @@ class PlannedHarvestSerializer(serializers.ModelSerializer):
             'planted_commodity',  # Include planted commodity
             'ranch',  # Include ranch name for clarity
             'day_of_week',
+            'notes_general',
+            'forklift_contractor',
+            'forklift_rate',
         ]
     
     def get_day_of_week(self, obj):
@@ -125,4 +128,9 @@ class FileSerializer(serializers.ModelSerializer):
 class PoolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pools
+        fields = '__all__'
+
+class FieldContractorsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FieldContractors
         fields = '__all__'
