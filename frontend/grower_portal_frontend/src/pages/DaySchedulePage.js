@@ -90,16 +90,17 @@ const DaySchedulePage = () => {
   const handleCloseMenu = () => {
     setAnchorEl(null);
   };
+  console.log(filteredData);
 
   const columns = [
-    { field: "commodity", headerName: "Commodity"},
+    { field: "planted_commodity", headerName: "Commodity"},
     { field: "harvest_date", headerName: "Date"},
     { field: "growerBlockId", headerName: "Block ID" },
     { field: "growerBlockName", headerName: "Block Name" },
     { field: "planned_bins", headerName: "Est. Bins" },
-    { field: "hauler", headerName: "Haul" },
-    { field: "forklift_contractor", headerName: "Fork" },
-    { field: "contractor", headerName: "Pick" },
+    { field: "truckingContractorName", headerName: "Haul" },
+    { field: "forkliftContractorName", headerName: "Fork" },
+    { field: "laborContractorName", headerName: "Pick" },
     { field: "deliver_to", headerName: "Receiver" },
     { field: "packed_by", headerName: "Packer"},
     { field: "pool", headerName: "Pool"},

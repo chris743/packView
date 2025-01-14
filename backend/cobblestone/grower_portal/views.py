@@ -17,6 +17,7 @@ from .models import (Grower,
                      File,
                      Pools,
                      FieldContractors,
+                     HarvestPlansDate
                      )
 from .serializers import (
     GrowerSerializer,
@@ -32,7 +33,8 @@ from .serializers import (
     FolderSerializer,
     FileSerializer,
     PoolSerializer,
-    FieldContractorsSerializer
+    FieldContractorsSerializer,
+    HarvestDateSerializer
 )
 
 class GrowerViewSet(ModelViewSet):
@@ -95,6 +97,9 @@ class VarietiesViewSet(ModelViewSet):
     queryset = Varieties.objects.all()
     serializer_class = VarietiesSerializer
 
+class HarvestPlanDateViewSet(ModelViewSet):
+    queryset = HarvestPlansDate.objects.all()
+    serializer_class = HarvestDateSerializer
 
 class FolderViewSet(ModelViewSet):
     queryset = Folder.objects.all()

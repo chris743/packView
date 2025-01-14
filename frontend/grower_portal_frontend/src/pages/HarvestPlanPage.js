@@ -4,11 +4,13 @@ import ScheduleTable from "../components/HarvestPlanWeeklyTable";
 import { Button, Box, Fab, Menu, MenuItem } from "@mui/material";
 import AdvancedModal from "../components/HarvestPlanModal";
 import dayjs from "dayjs";
+import isBetween from "dayjs/plugin/isBetween";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import SaveIcon from "@mui/icons-material/Save";
 
+dayjs.extend(isBetween);
 
 const endpoint = "planned-harvests";
 
@@ -40,13 +42,12 @@ const TestPage = () => {
   const transformData = (apiData) => {
     const getDayColumn = (date) => {
       const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-      const dayIndex = new Date(date).getDay();
+      let dayIndex = new Date(date).getDay() + 1; // Adjust day index
+      if (dayIndex === 7) dayIndex = 0; // Reset to Sunday if index is 7
       return days[dayIndex];
     };
-
+  
     return apiData.map((item) => {
-      const dayColumn = getDayColumn(item.harvest_date);
-
       const row = {
         id: item.id,
         commodity: item.planted_commodity,
@@ -64,31 +65,40 @@ const TestPage = () => {
         sat: null,
         balance: item.planned_bins - item.received_bins || 0,
         grower_block: item.grower_block,
-        harvest_date: item.harvest_date,
         pool: item.pool,
         hauler: item.hauler,
+        truckingContractorName: item.truckingContractorName,
         hauling_rate: item.hauling_rate,
         contractor: item.contractor,
+        laborContractorName: item.laborContractorName,
         harvesting_rate: item.harvesting_rate,
         forklift_contractor: item.forklift_contractor,
+        forkliftContractorName: item.forkliftContractorName,
         forklift_rate: item.forklift_rate,
         notes_general: item.notes_general,
       };
-
-      row[dayColumn] = item.planned_bins;
+  
+      // Map each date to the corresponding day column
+      item.dates.forEach((dateObj) => {
+        const dayColumn = getDayColumn(dateObj.date); // Get the column for the date
+        if (dayColumn) {
+          row[dayColumn] = (row[dayColumn] || 0) + dateObj.estimated_bins; // Add bins to existing value if present
+        }
+      });
+  
       return row;
     });
   };
 
   const getCurrentWeekData = () => {
-    const startOfWeek = currentWeek.toDate();
-    const endOfWeek = currentWeek.add(6, "day").toDate();
-
+    const startOfWeek = dayjs(currentWeek).startOf("week"); // Start of Sunday
+    const endOfWeek = dayjs(currentWeek).endOf("week"); // End of Saturday
+  
     const filteredData = data.filter((item) => {
-      const harvestDate = new Date(item.harvest_date);
-      return harvestDate >= startOfWeek && harvestDate <= endOfWeek;
+      const harvestDate = dayjs(item.harvest_date); // Parse with dayjs
+      return harvestDate.isBetween(startOfWeek, endOfWeek, null, "[]"); // Inclusive range
     });
-
+  
     return transformData(filteredData);
   };
 

@@ -121,11 +121,22 @@ class PlannedHarvest(models.Model):
     forklift_contractor = models.ForeignKey(FieldContractors, on_delete=models.CASCADE, related_name="forklift_contractor", null=True)
     forklift_rate = models.FloatField(null=True)
     pool = models.ForeignKey(Pools, on_delete=models.CASCADE, related_name="harvest_pool")
-    harvest_date = models.DateField(null=False)
     notes_general = models.TextField(null=True, blank=True)
+    deliver_to = models.CharField(null=True, default="CF", max_length=30)
+    packed_by = models.CharField(null=True, default="CF", max_length=30)
 
     def __str__(self):
         return f"{self.grower_block} - {self.harvest_date}"
+    
+class HarvestPlansDate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False, max_length=36)
+    harvest_plan = models.ForeignKey(PlannedHarvest, related_name="dates", on_delete=models.CASCADE)
+    date=models.DateField()
+    estimated_bins=models.IntegerField()
+
+    def __str__(self):
+        return f"{self.date} - {self.estimated_bins} bins"
+
     
 class Receivings (models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False, max_length=36)

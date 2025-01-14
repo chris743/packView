@@ -26,6 +26,8 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
   const [haulers, setHaulers] = useState([]);
   const [fork, setFork] = useState([]);
   const [blockSearchOpen, setBlockSearchOpen] = useState(false);
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [harvestPlanId, setHarvestPlanId] = useState([]);
 
   const modalStyle = {
     position: "absolute",
@@ -74,9 +76,43 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDaySelect = (selectedDate) => {
-    const dateOnly = new Date(selectedDate).toISOString().split("T")[0]; // Format as 'YYYY-MM-DD'
-    setFormData({ ...formData, harvest_date: dateOnly });
+  const handleSelectDates = (dates) => {
+    console.log("Selected dates:", dates);
+    setSelectedDates(dates);
+    setHarvestPlanId(formData.id);
+    // Post the selected dates to the backend
+  };
+
+  const postSelectedDatesToTable = async (harvestPlanId, selectedDates, otherFields) => {
+    try {
+      // Transform selectedDates into the required format
+      const dates = Object.entries(selectedDates).map(([date, bins]) => ({
+        date, // Date in 'YYYY-MM-DD' format
+        bins, // Number of bins
+      }));
+  
+      // Construct the payload
+      const payload = {
+        ...otherFields, // Include other harvest plan fields
+        dates, // Add the dates array
+      };
+  
+      // Send the POST request
+      const response = await fetch(`/api/planned-harvests/${harvestPlanId}/`, {
+        method: "POST", // Use "PUT" for updates if necessary
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Failed to save: ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+      console.log("Payload saved successfully:", data);
+    } catch (error) {
+      console.error("Error saving payload:", error);
+    }
   };
 
   const allowedFields = [
@@ -91,6 +127,9 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
     "pool",
     "harvest_date",
     "notes_general",
+    "forklift_contractor",
+    "forklift_rate",
+    "dates",
   ];
 
   const sanitizeFormData = (formData) => {
@@ -121,24 +160,31 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
     setLoading(true);
     setError(null);
 
-    const sanitizedData = sanitizeFormData(formData);
-
     try {
-      if (sanitizedData.id) {
-        await editData("planned-harvests", sanitizedData.id, sanitizedData);
-      } else {
-        console.log(JSON.stringify(sanitizedData));
-        await createData("planned-harvests", sanitizedData);
-      }
-      onSave(sanitizedData); // Update parent table
-      onClose(); // Close modal
+        // Save the main form data first
+        const sanitizedData = sanitizeFormData(formData);
+
+        if (sanitizedData.id) {
+            console.log(JSON.stringify(sanitizedData));
+            await editData("planned-harvests", sanitizedData.id, sanitizedData);
+        } else {
+            const response = await createData("planned-harvests", sanitizedData);
+            const newData = await response.json();
+            setHarvestPlanId(newData.id); // Set the new ID
+        }
+
+        // Ensure dates are uploaded after main form save
+        await postSelectedDatesToTable(harvestPlanId, selectedDates);
+
+        onSave(sanitizedData);
+        onClose();
     } catch (err) {
-      console.error("Error saving data:", err);
-      setError("Failed to save changes. Please try again.");
+        console.error("Error saving data:", err);
+        setError("Failed to save changes. Please try again.");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const generalTabContent = (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
@@ -190,8 +236,8 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
         renderInput={(params) => <TextField {...params} label="Pool" variant="outlined" />}
       />
       <WeekdayPicker
-        selectedDate={formData.harvest_date}
-        onSelectDate={handleDaySelect}
+        selectedDates={selectedDates}
+        onSelectDates={handleSelectDates}
         weekStart={weekStart}
       />
       <TextField
@@ -204,7 +250,6 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
       />
     </Box>
   );
-  console.log(formData)
 
   const resourcesTabContent = (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>

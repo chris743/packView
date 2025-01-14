@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Grower, Ranch, Pools, Block, Commodity, FieldContractors, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
+from .models import Grower, Ranch, Pools, Block, Commodity, FieldContractors, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File, HarvestPlansDate
 
 @admin.register(Commodity)
 class CommodityAdmin(admin.ModelAdmin):
@@ -25,9 +25,9 @@ class BlockAdmin(admin.ModelAdmin):
 
 @admin.register(PlannedHarvest)
 class PlannedHarvestAdmin(admin.ModelAdmin):
-    list_display = ("grower_block", "planned_bins", "harvest_date")  # Corrected 'block' to 'grower_block'
+    list_display = ("grower_block", "planned_bins")  # Corrected 'block' to 'grower_block'
     search_fields = ("grower_block__name",)
-    list_filter = ("harvest_date",)
+    
 
 @admin.register(ProductionRuns)
 class ProductionRunsAdmin(admin.ModelAdmin):
@@ -72,3 +72,8 @@ class FileAdmin(admin.ModelAdmin):
 class PoolsAdmin(admin.ModelAdmin):
     list_display=('id', 'commodity', 'description', 'openDate', 'closeDate')
     search_fields=('id',)
+
+@admin.register(HarvestPlansDate)
+class HarvestDatesAdmin(admin.ModelAdmin):
+    list_display=('date', 'estimated_bins',)
+    search_fields=('date',)
