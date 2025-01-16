@@ -69,26 +69,38 @@ const GrowerDetailPage = () => {
     };
 
     const handleSave = async (data) => {
-        const previouslySelectedRanchId = selectedRanch?.id;
-
-        if (modalType === 'ranch') {
-            await createData(ranch_endpoint, { ...data, grower_id: grower.grower_id });
-        } else if (modalType === 'block') {
+        try {
+          const previouslySelectedRanchId = selectedRanch?.id;
+      
+          if (modalType === 'ranch') {
+            // Add grower ID to the ranch creation request
+            await createData(ranch_endpoint, { ...data, grower: growerId });
+          } else if (modalType === 'block') {
+            if (!selectedRanch?.id) {
+              console.error("No ranch selected for block creation.");
+              return;
+            }
+            // Add ranch ID to the block creation request
             await createData(block_endpoint, { ...data, ranch_id: selectedRanch.id });
-        }
-
-        await loadData();
-
-        if (previouslySelectedRanchId) {
+          }
+      
+          // Reload data after saving
+          await loadData();
+      
+          // If a ranch was previously selected, reload its blocks
+          if (previouslySelectedRanchId) {
             const previouslySelectedRanch = ranches.find((r) => r.id === previouslySelectedRanchId);
             if (previouslySelectedRanch) {
-                setSelectedRanch(previouslySelectedRanch);
-                handleRanchClick(previouslySelectedRanch);
+              setSelectedRanch(previouslySelectedRanch);
+              handleRanchClick(previouslySelectedRanch);
             }
+          }
+      
+          handleCloseModal();
+        } catch (error) {
+          console.error("Error saving data:", error);
         }
-
-        handleCloseModal();
-    };
+      };
 
     const propertiesTab = (
         <Box display="flex" gap={3}>

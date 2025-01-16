@@ -1,11 +1,19 @@
+// WeekdayPicker.js
 import React, { useState, useEffect } from "react";
 import { Box, TextField } from "@mui/material";
 import dayjs from "dayjs";
-import { NoEncryption } from "@mui/icons-material";
 
-const WeekdayPicker = ({ selectedDates = {}, onSelectDates, weekStart }) => {
+const WeekdayPicker = ({ selectedDates = [], onSelectDates, weekStart }) => {
   const [currentWeek, setCurrentWeek] = useState(dayjs(weekStart).startOf("week"));
-  const [selected, setSelected] = useState(selectedDates);
+  const [selected, setSelected] = useState({});
+
+  useEffect(() => {
+    const datesObject = selectedDates.reduce((acc, { date, estimated_bins }) => {
+      acc[date] = estimated_bins || 0;
+      return acc;
+    }, {});
+    setSelected(datesObject);
+  }, [selectedDates]);
 
   useEffect(() => {
     if (weekStart) {
@@ -25,13 +33,18 @@ const WeekdayPicker = ({ selectedDates = {}, onSelectDates, weekStart }) => {
     const bins = parseInt(value, 10) || 0;
     const updatedSelection = { ...selected, [date]: bins };
 
-    // Remove the date from selection if bins are 0 or null
     if (bins === 0) {
       delete updatedSelection[date];
     }
 
     setSelected(updatedSelection);
-    onSelectDates(updatedSelection);
+
+    // Convert to array format and pass directly
+    const updatedArray = Object.entries(updatedSelection).map(([key, val]) => ({
+      date: key,
+      estimated_bins: val,
+    }));
+    onSelectDates(updatedArray);
   };
 
   return (
@@ -51,9 +64,8 @@ const WeekdayPicker = ({ selectedDates = {}, onSelectDates, weekStart }) => {
               alignItems: "center",
               flex: 1,
               p: 0.5,
-              border: `2px solid ${isActive ? "blue" : "lightgray"}`,
+              border: `1px solid ${isActive ? "#90caf9" : "#99999980"}`,
               borderRadius: 2,
-              
             }}
           >
             <Box sx={{ fontSize: "12px", fontWeight: "bold", mb: 0.5 }}>
@@ -62,17 +74,15 @@ const WeekdayPicker = ({ selectedDates = {}, onSelectDates, weekStart }) => {
             <TextField
               type="number"
               value={binsValue}
-              onChange={(e) =>
-                handleBinsChange(formattedDate, e.target.value)
-              }
+              onChange={(e) => handleBinsChange(formattedDate, e.target.value)}
               InputProps={{
                 inputProps: { step: 50, min: 0, style: { padding: "6px 8px" } },
               }}
               variant="outlined"
               sx={{
-                width: "60px",
+                width: "75px",
                 "& .MuiOutlinedInput-root": {
-                  padding: "4px", // Reduce padding for compact size
+                  padding: "4px",
                 },
               }}
             />

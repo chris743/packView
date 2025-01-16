@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fetchData } from "../api/api";
-import ScheduleTable from "../components/HarvestPlanWeeklyTable";
+import WeeklyHarvestTable from "../components/HarvestPlanWeeklyTable";
 import { Button, Box, Fab, Menu, MenuItem } from "@mui/material";
 import AdvancedModal from "../components/HarvestPlanModal";
 import dayjs from "dayjs";
@@ -48,14 +48,19 @@ const TestPage = () => {
     };
   
     return apiData.map((item) => {
+
+      const totalBinsReceived = item.receivings.reduce(
+        (sum, receiving) => sum + (receiving.qty_received || 0), 0
+      );
+
       const row = {
         id: item.id,
         commodity: item.planted_commodity,
         ranch_name: item.ranch,
         growerBlockName: item.growerBlockName,
         planned_bins: item.planned_bins,
-        size: item.size,
-        bins_received: item.received_bins,
+        size: item.block_size,
+        bins_received: totalBinsReceived,
         sun: null,
         mon: null,
         tue: null,
@@ -76,6 +81,7 @@ const TestPage = () => {
         forkliftContractorName: item.forkliftContractorName,
         forklift_rate: item.forklift_rate,
         notes_general: item.notes_general,
+        dates: item.dates,
       };
   
       // Map each date to the corresponding day column
@@ -95,8 +101,10 @@ const TestPage = () => {
     const endOfWeek = dayjs(currentWeek).endOf("week"); // End of Saturday
   
     const filteredData = data.filter((item) => {
-      const harvestDate = dayjs(item.harvest_date); // Parse with dayjs
-      return harvestDate.isBetween(startOfWeek, endOfWeek, null, "[]"); // Inclusive range
+      return item.dates.some((dateObj) => {
+        const date = dayjs(dateObj.date);
+        return date >= startOfWeek && date <= endOfWeek;
+      })
     });
   
     return transformData(filteredData);
@@ -173,8 +181,8 @@ const TestPage = () => {
     { field: "commodity", headerName: "commodity"},
     { field: "ranch_name", headerName: "Ranch" },
     { field: "growerBlockName", headerName: "Block" },
+    { field: "size", headerName: "Block Size (acres)" },
     { field: "planned_bins", headerName: "Est. Bins" },
-    { field: "size", headerName: "Size" },
     { field: "bins_received", headerName: "Bins Received" },
     { field: "sun", headerName: "Sun" },
     { field: "mon", headerName: "Mon" },
@@ -228,7 +236,7 @@ const TestPage = () => {
 
       {/* Schedule Table */}
       <Box id="schedule-table">
-        <ScheduleTable 
+        <WeeklyHarvestTable 
         data={getCurrentWeekData()} 
         columns={columns} 
         topheader={topHeaderColumns} 

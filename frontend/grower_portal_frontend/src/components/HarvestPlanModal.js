@@ -1,3 +1,4 @@
+// HarvestPlanModal.js
 import React, { useEffect, useState } from "react";
 import {
   Modal,
@@ -16,7 +17,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { fetchData, createData, editData, deleteData } from "../api/api";
 
-const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
+const HarvestPlanModal = ({ open, onClose, rowData, onSave, weekStart }) => {
   const [formData, setFormData] = useState(rowData || {});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -26,20 +27,8 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
   const [haulers, setHaulers] = useState([]);
   const [fork, setFork] = useState([]);
   const [blockSearchOpen, setBlockSearchOpen] = useState(false);
-  const [selectedDates, setSelectedDates] = useState([]);
-  const [harvestPlanId, setHarvestPlanId] = useState([]);
+  const [selectedDates, setSelectedDates] = useState(rowData?.dates || []);
 
-  const modalStyle = {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: "600px", // Reduced width by 25%
-    bgcolor: "background.paper",
-    border: "1px solid #000", // Slightly thinner border
-    boxShadow: 24,
-    p: 3, // Reduced padding by 25%
-  };
   // Fetch dropdown data
   const loadDropdownData = async () => {
     try {
@@ -69,6 +58,7 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
   useEffect(() => {
     loadDropdownData();
     setFormData(rowData || {});
+    setSelectedDates(rowData?.dates || []);
   }, [rowData]);
 
   // Handle changes in form fields
@@ -77,42 +67,7 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
   };
 
   const handleSelectDates = (dates) => {
-    console.log("Selected dates:", dates);
     setSelectedDates(dates);
-    setHarvestPlanId(formData.id);
-    // Post the selected dates to the backend
-  };
-
-  const postSelectedDatesToTable = async (harvestPlanId, selectedDates, otherFields) => {
-    try {
-      // Transform selectedDates into the required format
-      const dates = Object.entries(selectedDates).map(([date, bins]) => ({
-        date, // Date in 'YYYY-MM-DD' format
-        bins, // Number of bins
-      }));
-  
-      // Construct the payload
-      const payload = {
-        ...otherFields, // Include other harvest plan fields
-        dates, // Add the dates array
-      };
-  
-      // Send the POST request
-      const response = await fetch(`/api/planned-harvests/${harvestPlanId}/`, {
-        method: "POST", // Use "PUT" for updates if necessary
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Failed to save: ${response.statusText}`);
-      }
-  
-      const data = await response.json();
-      console.log("Payload saved successfully:", data);
-    } catch (error) {
-      console.error("Error saving payload:", error);
-    }
   };
 
   const allowedFields = [
@@ -129,16 +84,18 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
     "notes_general",
     "forklift_contractor",
     "forklift_rate",
-    "dates",
   ];
 
-  const sanitizeFormData = (formData) => {
-    return Object.keys(formData)
-      .filter((key) => allowedFields.includes(key)) // Include only allowed fields
+  const sanitizeFormData = (formData, selectedDates) => {
+    const sanitized = Object.keys(formData)
+      .filter((key) => allowedFields.includes(key))
       .reduce((obj, key) => {
         obj[key] = formData[key];
         return obj;
       }, {});
+    
+    sanitized.dates = selectedDates;
+    return sanitized;
   };
 
   const handleDelete = async () => {
@@ -161,34 +118,27 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
     setError(null);
 
     try {
-        // Save the main form data first
-        const sanitizedData = sanitizeFormData(formData);
-
-        if (sanitizedData.id) {
-            console.log(JSON.stringify(sanitizedData));
-            await editData("planned-harvests", sanitizedData.id, sanitizedData);
-        } else {
-            const response = await createData("planned-harvests", sanitizedData);
-            const newData = await response.json();
-            setHarvestPlanId(newData.id); // Set the new ID
-        }
-
-        // Ensure dates are uploaded after main form save
-        await postSelectedDatesToTable(harvestPlanId, selectedDates);
-
-        onSave(sanitizedData);
-        onClose();
+      const sanitizedData = sanitizeFormData(formData, selectedDates);
+      
+      if (sanitizedData.id) {
+        await editData("planned-harvests", sanitizedData.id, sanitizedData);
+      } else {
+        console.log(JSON.stringify(sanitizedData));
+        await createData("planned-harvests", sanitizedData);
+      }
+      
+      onSave(sanitizedData);
+      onClose();
     } catch (err) {
-        console.error("Error saving data:", err);
-        setError("Failed to save changes. Please try again.");
+      console.error("Error saving data:", err);
+      setError("Failed to save changes. Please try again.");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   const generalTabContent = (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-      {/* Grower Block Dropdown and Search */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%" }}>
         <Autocomplete
           sx={{ width: "50%" }}
@@ -214,16 +164,6 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
         open={blockSearchOpen}
         onClose={() => setBlockSearchOpen(false)}
         onSelectBlock={(blockId) => handleChange("grower_block", blockId)}
-      />
-
-      {/* Other General Fields */}
-      <TextField
-        label="Planned Bins"
-        sx={{ width: "50%" }}
-        type="number"
-        value={formData.planned_bins || ""}
-        onChange={(e) => handleChange("planned_bins", Number(e.target.value))}
-        fullWidth
       />
       <Autocomplete
         sx={{ width: "50%" }}
@@ -253,72 +193,71 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
 
   const resourcesTabContent = (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-        <Box sx={{ display:"flex", flexDirection: "row", gap: 2, width: '100%'}}>
-            <TextField
-                label="Labor Contractor"
-                value={formData.contractor || ""}
-                onChange={(e) => handleChange("contractor", e.target.value)}
-                select
-                fullWidth
-            >
-                {contractors.map((contractor) => (
-                <MenuItem key={contractor.id} value={contractor.id}>
-                    {contractor.name}
-                </MenuItem>
-                ))}
-            </TextField>
-            <TextField
-                label="Harvesting Rate"
-                type="number"
-                value={formData.harvesting_rate || ""}
-                onChange={(e) => handleChange("harvesting_rate", parseFloat(e.target.value))}
-                fullWidth
-            />
-        </Box>
-        <Box sx={{ display:"flex", flexDirection: "row", gap: 2, width: '100%'}}>
-            <TextField
-                label="Trucking Contractor"
-                value={formData.hauler || ""}
-                onChange={(e) => handleChange("hauler", e.target.value)}
-                select
-                fullWidth
-            >
-                {haulers.map((hauler) => (
-                <MenuItem key={hauler.id} value={hauler.id}>
-                    {hauler.name}
-                </MenuItem>
-                ))}
-            </TextField>
-            <TextField
-                label="Trucking Rate"
-                type="number"
-                value={formData.hauling_rate || ""}
-                onChange={(e) => handleChange("hauling_rate", parseFloat(e.target.value))}
-                fullWidth
-            />
-      </Box>
-
       <Box sx={{ display:"flex", flexDirection: "row", gap: 2, width: '100%'}}>
-            <TextField
-                label="Forklift Contractor"
-                value={formData.forklift_contractor || ""}
-                onChange={(e) => handleChange("forklift_contractor", e.target.value)}
-                select
-                fullWidth
-            >
-                {fork.map((fork) => (
-                <MenuItem key={fork.id} value={fork.id}>
-                    {fork.name}
-                </MenuItem>
-                ))}
-            </TextField>
-            <TextField
-                label="Forklift Rate"
-                type="number"
-                value={formData.forklift_rate || ""}
-                onChange={(e) => handleChange("forklift_rate", parseFloat(e.target.value))}
-                fullWidth
-            />
+        <TextField
+          label="Labor Contractor"
+          value={formData.contractor || ""}
+          onChange={(e) => handleChange("contractor", e.target.value)}
+          select
+          fullWidth
+        >
+          {contractors.map((contractor) => (
+            <MenuItem key={contractor.id} value={contractor.id}>
+              {contractor.name}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label="Harvesting Rate"
+          type="number"
+          value={formData.harvesting_rate || ""}
+          onChange={(e) => handleChange("harvesting_rate", parseFloat(e.target.value))}
+          fullWidth
+        />
+      </Box>
+      <Box sx={{ display:"flex", flexDirection: "row", gap: 2, width: '100%'}}>
+        <TextField
+          label="Trucking Contractor"
+          value={formData.hauler || ""}
+          onChange={(e) => handleChange("hauler", e.target.value)}
+          select
+          fullWidth
+        >
+          {haulers.map((hauler) => (
+            <MenuItem key={hauler.id} value={hauler.id}>
+              {hauler.name}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label="Trucking Rate"
+          type="number"
+          value={formData.hauling_rate || ""}
+          onChange={(e) => handleChange("hauling_rate", parseFloat(e.target.value))}
+          fullWidth
+        />
+      </Box>
+      <Box sx={{ display:"flex", flexDirection: "row", gap: 2, width: '100%'}}>
+        <TextField
+          label="Forklift Contractor"
+          value={formData.forklift_contractor || ""}
+          onChange={(e) => handleChange("forklift_contractor", e.target.value)}
+          select
+          fullWidth
+        >
+          {fork.map((fork) => (
+            <MenuItem key={fork.id} value={fork.id}>
+              {fork.name}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label="Forklift Rate"
+          type="number"
+          value={formData.forklift_rate || ""}
+          onChange={(e) => handleChange("forklift_rate", parseFloat(e.target.value))}
+          fullWidth
+        />
       </Box>
     </Box>
   );
@@ -330,61 +269,53 @@ const AdvancedModal = ({ open, onClose, rowData, onSave, weekStart }) => {
 
   return (
     <Modal open={open} onClose={onClose}>
-          {/* Modal Content */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 600, // Reduced width
-              bgcolor: "background.paper",
-              border: "2px solid #000",
-              boxShadow: 24,
-              p: 3, // Reduced padding
-            }}
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 700,
+          bgcolor: "background.paper",
+          border: "2px solid #000",
+          boxShadow: 24,
+          p: 3,
+        }}
+      >
+        <Typography variant="h6" gutterBottom>
+          {formData.id ? "Edit Harvest Plan" : "New Harvest Plan"}
+        </Typography>
+
+        <TabView tabs={tabs} />
+        {error && <Typography color="error">{error}</Typography>}
+
+        <Box display="flex" justifyContent="space-between" mt={3}>
+          <Button
+            variant="contained"
+            color="warning"
+            startIcon={<DeleteIcon />}
+            onClick={handleDelete}
+            disabled={!rowData?.id}
           >
-            {/* Draggable Header */}
-            <Typography
-              variant="h6"
-              gutterBottom
-              
+            DELETE
+          </Button>
+          <Box>
+            <Button onClick={onClose} sx={{ mr: 2 }} disabled={loading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              variant="contained"
+              color="primary"
+              disabled={loading}
             >
-              {formData.id ? "Edit Harvest Plan" : "New Harvest Plan"}
-            </Typography>
-  
-            {/* Tab Content */}
-            <TabView tabs={tabs} />
-            {error && <Typography color="error">{error}</Typography>}
-  
-            {/* Footer Buttons */}
-            <Box display="flex" justifyContent="space-between" mt={3}>
-              <Button
-                variant="contained"
-                color="warning"
-                startIcon={<DeleteIcon />}
-                onClick={handleDelete}
-                disabled={!rowData?.id}
-              >
-                DELETE
-              </Button>
-              <Box>
-                <Button onClick={onClose} sx={{ mr: 2 }} disabled={loading}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  variant="contained"
-                  color="primary"
-                  disabled={loading}
-                >
-                  {loading ? "Saving..." : "Save"}
-                </Button>
-              </Box>
-            </Box>
+              {loading ? "Saving..." : "Save"}
+            </Button>
           </Box>
+        </Box>
+      </Box>
     </Modal>
   );
-}
+};
 
-export default AdvancedModal;
+export default HarvestPlanModal;

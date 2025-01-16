@@ -20,7 +20,7 @@ class Grower(models.Model):
 
 class Ranch(models.Model):
     name = models.CharField(max_length=255)
-    grower = models.ForeignKey(Grower, on_delete=models.CASCADE, related_name="ranches")
+    grower = models.ForeignKey(Grower, on_delete=models.CASCADE, related_name="togrower")
     location = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
@@ -42,14 +42,14 @@ class Commodity (models.Model):
     
 class Varieties (models.Model):
     name = models.CharField(max_length=30)
-    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name="commodity")
+    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name="varietytocommodity")
     
     def __str__(self):
         return self.name
     
 class Pools (models.Model):
     id = models.CharField(unique=True, primary_key=True, max_length=15)
-    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name="pool_commodity")
+    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name="pooltocommodity")
     description = models.TextField(null=True, blank=True)
     openDate = models.DateField()
     closeDate = models.DateField(null=True, blank=True)
@@ -60,10 +60,10 @@ class Pools (models.Model):
 class Block(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
     block_id = models.IntegerField(null=True, blank=False)
-    ranch = models.ForeignKey(Ranch, on_delete=models.CASCADE, related_name="blocks")
+    ranch = models.ForeignKey(Ranch, on_delete=models.CASCADE, related_name="toranch")
     size = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # e.g., acres
-    planted_commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE,related_name="commodities")
-    planted_variety = models.ForeignKey(Varieties, on_delete=models.CASCADE, related_name="variety")
+    planted_commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE,related_name="tocommodity")
+    planted_variety = models.ForeignKey(Varieties, on_delete=models.CASCADE, related_name="tovariety")
     gib_applied = models.BooleanField(null=True)
 
     def __str__(self):
@@ -113,7 +113,7 @@ class FieldContractors(models.Model):
 class PlannedHarvest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False, max_length=36)
     grower_block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name="planned_harvests")  # Unique related_name
-    planned_bins = models.IntegerField(null=False, default=0)
+    planned_bins = models.IntegerField(null=True, default=0)
     contractor = models.ForeignKey(FieldContractors, on_delete=models.CASCADE, related_name='labor_contractors', null=True)
     harvesting_rate = models.FloatField(null=True)
     hauler = models.ForeignKey(FieldContractors, on_delete=models.CASCADE, related_name='trucking_company', null=True)
@@ -126,7 +126,7 @@ class PlannedHarvest(models.Model):
     packed_by = models.CharField(null=True, default="CF", max_length=30)
 
     def __str__(self):
-        return f"{self.grower_block} - {self.harvest_date}"
+        return f"{self.grower_block}"
     
 class HarvestPlansDate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False, max_length=36)
@@ -137,12 +137,13 @@ class HarvestPlansDate(models.Model):
     def __str__(self):
         return f"{self.date} - {self.estimated_bins} bins"
 
-    
 class Receivings (models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False, max_length=36)
     receipt_id = models.CharField(null=False, max_length=20)
-    harvest = models.ForeignKey(PlannedHarvest, on_delete=models.CASCADE, related_name="Harvest")
+    harvest = models.ForeignKey(PlannedHarvest, on_delete=models.CASCADE, related_name="receivings")
     qty_received = models.IntegerField(null=False)
+    date=models.DateField(auto_now_add=True, null=True)
+    created_timestamp=models.DateTimeField(auto_now_add=True, null=True)
 
     def __str__(self):
         return f"{self.harvest} - {self.receipt_id}"
