@@ -2,6 +2,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from django.core.management.base import BaseCommand
 import atexit
 from sheduled_tasks.tasks.upload_orders import process_newest_file
+from sheduled_tasks.tasks.upload_from_onedrive import onedrive_upload
 from sheduled_tasks.tasks.upload_inventory import connect_to_email, download_reports, combine_and_import_reports
 
 class Command(BaseCommand):
@@ -11,7 +12,7 @@ class Command(BaseCommand):
         scheduler = BackgroundScheduler()
 
         # Schedule the process_newest_file function
-        scheduler.add_job(process_newest_file, 'interval', minutes=15)
+        scheduler.add_job(onedrive_upload, 'interval', minutes=15)
 
         # Schedule the email processing function
         def process_bin_inventory():
@@ -20,7 +21,7 @@ class Command(BaseCommand):
                 download_reports(mail)
                 combine_and_import_reports()
 
-        scheduler.add_job(process_bin_inventory, 'interval', minutes=9999)
+        scheduler.add_job(process_bin_inventory, 'interval', minutes=15)
 
         # Start the scheduler
         self.stdout.write("Starting the scheduler...")

@@ -9,11 +9,38 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from django.db.models import Sum
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+import pandas as pd
+from django.db.models.functions import Cast
+from django.db.models import IntegerField
+import logging
+
+logger = logging.getLogger(__name__)
+
+def process_size_id(df):
+    """
+    Process the size_id column in the DataFrame based on commodity_id.
+    """
+    def cast_size_id(row):
+        # Perform the size_id cast only if the commodity_id is not 'Gold Nugget'
+        if row['commodity_id'] != 'Gold Nugget':
+            try:
+                return int(row['size_id'])
+            except (ValueError, TypeError):
+                return None  # Return None if casting fails
+        return row['size_id']  # Return the original size_id for 'Gold Nugget'
+
+    df['size_id'] = df.apply(cast_size_id, axis=1)
+    return df
+
+
 class BinInventoryView(APIView):
     """
     View to fetch bin inventory data and associated records.
     """
-
     def get(self, request):
         """
         Fetch the table data grouped by commodity_id, region_id, grade_id, and size_id.
@@ -22,27 +49,33 @@ class BinInventoryView(APIView):
             # Fetch and group data
             data = (
                 BinInventory.objects
-                .values('commodity_id', 'region_id', 'grade_id')
+                .values('commodity_id', 'region_id', 'grade_id', 'size_id')
                 .annotate(
-                    size_id=Cast('size_id', IntegerField()),
                     total_quantity=Sum('on_hand_quantity')
                 )
                 .order_by('commodity_id', 'region_id', 'grade_id', 'size_id')
             )
 
-            # Convert queryset to list of dictionaries
-            results = list(data)
+            # Convert queryset to a DataFrame
+            df = pd.DataFrame(list(data))
 
-            if not results:
+            if df.empty:
                 return Response({"message": "No data available."}, status=status.HTTP_204_NO_CONTENT)
+
+            # Process the size_id column
+            df = process_size_id(df)
+
+            # Replace NaN values with a JSON-compatible format (None for null in JSON)
+            df = df.fillna(value={'size_id': '', 'commodity_id': '', 'region_id': '', 'grade_id': '', 'total_quantity': 0})
+
+            # Convert the DataFrame back to a dictionary
+            results = df.to_dict(orient='records')
 
             return Response(results, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Error fetching bin inventory data: {e}")
             return Response({"error": "Failed to fetch bin inventory data."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 class AssociatedBinsView(APIView):
     def get(self, request):
         # Get query parameters

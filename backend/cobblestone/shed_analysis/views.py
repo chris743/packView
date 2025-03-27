@@ -10,7 +10,7 @@ from datetime import date, timedelta
 import pandas as pd
 import re
 from zoneinfo import ZoneInfo
-from datetime import datetime
+from datetime import datetime, time
 
 class CapacityGaugeView(APIView):
     """
@@ -54,7 +54,7 @@ class CapacityGaugeView(APIView):
             capacities.append(0.2)
         else:
             capacities.append(1)
-        return min(capacities) * row['order_quantity'] if capacities else None
+        return min(capacities) * row['remaining_quantity'] if capacities else None
 
     def get(self, request):
         pst_timezone = ZoneInfo("America/Los_Angeles")
@@ -64,16 +64,21 @@ class CapacityGaugeView(APIView):
         orders_qs = Orders.objects.filter(ship_date=today).values()
         df = pd.DataFrame(orders_qs)
 
+        df = df[~df['customer'].str.contains('CALIFORNIA ASSOC OF FOOD BANKS', case=False, na=False)]
+
         if df.empty:
             return Response({"error": "No orders found for today"}, status=status.HTTP_404_NOT_FOUND)
+        
+        df['remaining_quantity'] = df['order_quantity'] - df['filled_quantity']
 
         # Process the DataFrame using split_count_size
-        df = self.split_count_size(df, style_col='style_id', order_quantity_col='order_quantity')
+        df = self.split_count_size(df, style_col='style_id', order_quantity_col='remaining_quantity')
+
 
         # Define capacity limits
         capacity_limits = {
             "giro": 336000,
-            "fox": 60000,
+            "fox": 100000,
             "vex": 76000,
             "bulk": 20000
         }
@@ -81,13 +86,19 @@ class CapacityGaugeView(APIView):
         # Calculate capacities
         df['computed_capacity'] = df.apply(self.compute_capacity, axis=1)
 
+        minutes_since_4am = (int((datetime.now() - datetime.combine(datetime.today(), time(4, 0))).total_seconds() / 60)) % 1440
+
+        elapsed_modifier = 1 + (minutes_since_4am / 1440)
+
         # Filter and calculate totals for each category
         capacities = {
-            "giro": df[df['style_id'].str.contains('giro', case=False, na=False)]['total_bags'].sum(),
-            "fox": df[df['style_id'].str.contains('fox', case=False, na=False)]['total_bags'].sum(),
-            "vex": df[df['style_id'].str.contains('vex', case=False, na=False)]['total_bags'].sum(),
-            "bulk": df[~df['style_id'].str.contains('giro|fox|vex', case=False, na=False)]['computed_capacity'].sum(),
+            "giro": (df[df['style_id'].str.contains(r'(?i)(giro|^TWB.*G$)', na=False)]['total_bags'].sum()) * elapsed_modifier,
+            "fox": (df[df['style_id'].str.contains(r'(?i)(fox|^TWB.*F$)', case=False, na=False)]['total_bags'].sum() * elapsed_modifier),
+            "vex": (df[df['style_id'].str.contains(r'(?i)(fox|^TWB.*F$)', case=False, na=False)]['total_bags'].sum() * elapsed_modifier),
+            "bulk": (df[~df['style_id'].str.contains('giro|fox|vex|TWB', case=False, na=False)]['computed_capacity'].sum() * elapsed_modifier),
         }
+
+        print((df[~df['style_id'].str.contains('giro|fox|vex|TWB', case=False, na=False)]['computed_capacity'].sum()))
 
         # Build response data
         data = {
@@ -129,6 +140,7 @@ class TopFiveThisWeek(APIView):
         # Fetch orders for the week and annotate with concatenated product_name
         orders_qs = (
             Orders.objects.filter(ship_date__range=(start_of_week, end_of_week))
+            .exclude(customer = 'CALIFORNIA ASSOC OF FOOD BANKS')
             .annotate(product_name=Concat(F('customer'), Value(' '), F('commodity_id'), Value(' '), F('style_id'), output_field=CharField()))
             .values('product_name', 'style_id')
             .annotate(total_order_quantity=Sum('order_quantity'))
@@ -313,9 +325,13 @@ class ChartDataView(APIView):
 
         if df.empty:
             return Response({"error": "No data found for the current week"}, status=status.HTTP_404_NOT_FOUND)
+        
+        df['remaining_quantity'] = df['order_quantity'] - df['filled_quantity']
+
 
         # Split count and size for giro, fox, vex
-        df = self.split_count_size(df, style_col='style_id', order_quantity_col='order_quantity')
+        df = self.split_count_size(df, style_col='style_id', order_quantity_col='remaining_quantity')
+
 
         # Filter data for each style
         giro_data = df[df['style_id'].str.contains('giro', case=False, na=False)].groupby('size')['total_bags'].sum().to_dict()
@@ -325,7 +341,7 @@ class ChartDataView(APIView):
         # Bulk data based on method_id
         bulk_data = (
             df[~df['style_id'].str.contains('giro|fox|vex|G|V|F', case=False, na=False)]
-            .groupby('style_id')['order_quantity']
+            .groupby('style_id')['remaining_quantity']
             .sum()
             .to_dict()
         )
@@ -357,7 +373,7 @@ class OrdersDashboardAPIView(APIView):
                 return Response({"error": "No data available"}, status=status.HTTP_404_NOT_FOUND)
 
             # Ensure ship_date is converted to datetime
-            df['ship_date'] = pd.to_datetime(df['ship_date'])
+            df['original_ship_date'] = pd.to_datetime(df['original_ship_date'])
 
             # Adjust order_quantity for specific styles
             df['order_quantity'] = df.apply(
@@ -370,7 +386,7 @@ class OrdersDashboardAPIView(APIView):
             # Today's date
             pst_timezone = ZoneInfo("America/Los_Angeles")
             today = datetime.now(pst_timezone).date()
-            filtered_df = df[df['ship_date'] == pd.Timestamp(today)]
+            filtered_df = df[df['original_ship_date'] == pd.Timestamp(today)]
 
             # Pie chart data for commodity distribution
             commodity_sum = filtered_df.groupby('commodity_id')['order_quantity'].sum()
@@ -401,9 +417,9 @@ class OrdersDashboardAPIView(APIView):
                 size_bar_charts.append(size_bar_chart)
 
             # Line chart data for total order quantity over time
-            daily_order_quantity = df.groupby('ship_date')['order_quantity'].sum().reset_index()
+            daily_order_quantity = df.groupby('original_ship_date')['order_quantity'].sum().reset_index()
             order_quantity_line_chart = {
-                "labels": daily_order_quantity['ship_date'].dt.strftime('%Y-%m-%d').tolist(),
+                "labels": daily_order_quantity['original_ship_date'].dt.strftime('%Y-%m-%d').tolist(),
                 "datasets": [{
                     "data": daily_order_quantity['order_quantity'].tolist(),
                     "backgroundColor": "#0288d1"
