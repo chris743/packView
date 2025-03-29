@@ -8,6 +8,8 @@ class GrowerSerializer(serializers.ModelSerializer):
 
 
 class RanchSerializer(serializers.ModelSerializer):
+    grower = GrowerSerializer(read_only=True)
+    
     class Meta:
         model = Ranch
         fields = ['id', 'name', 'grower']
@@ -18,12 +20,19 @@ class CommoditySerializer(serializers.ModelSerializer):
         model = Commodity
         fields = '__all__'
 
+class VarietiesSerializer(serializers.ModelSerializer):
+    commodity = CommoditySerializer(read_only=True)
+
+    class Meta:
+        model = Varieties
+        fields = '__all__'
 
 class BlockSerializer(serializers.ModelSerializer):
     ranch = RanchSerializer(read_only=True)
     ranch_id = serializers.PrimaryKeyRelatedField(
         queryset=Ranch.objects.all(), write_only=True, source='ranch'
     )
+    planted_variety = VarietiesSerializer(read_only=True)
     planted_commodity = serializers.PrimaryKeyRelatedField(
         queryset=Commodity.objects.all(), write_only=True)
 
@@ -121,16 +130,10 @@ class ProductionRunsSerializer(serializers.ModelSerializer):
     grower_block_id = serializers.PrimaryKeyRelatedField(
         queryset=Block.objects.all(), write_only=True, source='grower_block'
     )
+    variety = VarietiesSerializer(read_only=True)
 
     class Meta:
         model = ProductionRuns
-        fields = '__all__'
-
-class VarietiesSerializer(serializers.ModelSerializer):
-    commodity = CommoditySerializer(read_only=True)
-
-    class Meta:
-        model = Varieties
         fields = '__all__'
 
 class LaborContractorSerializer(serializers.ModelSerializer):

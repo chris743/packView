@@ -5,6 +5,7 @@ from datetime import datetime, date
 import hashlib
 import tkinter as tk
 from tkinter import filedialog
+import re
 
 # Database connection details
 DATABASE_TYPE = 'postgresql'
@@ -13,9 +14,9 @@ USER = 'chrism'
 PASSWORD = '!Cncamrts1'
 HOST = '192.168.128.30'
 PORT = '5432'
-DATABASE = 'applications'
-SCHEMA = 'public'
-TABLE_NAME = 'shed_analysis_orders'
+DATABASE = 'Production_data'
+SCHEMA = 'sales_data'
+TABLE_NAME = 'sales_orders'
 
 # Create database engine
 engine = create_engine(f"{DATABASE_TYPE}+{DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
@@ -37,7 +38,7 @@ else:
 
     # Normalize `size_id` column to always have leading zeros
     if 'size_id' in df.columns:
-        df['size_id'] = df['size_id'].astype(str).str.replace('.0$', '', regex=True).str.zfill(3)
+        df['size_id'] = df['size_id'].astype(str).str.replace(r'\.0$', '', regex=True)
 
     # Generate a unique line ID by hashing key fields
     def generate_line_id(row):
@@ -45,6 +46,35 @@ else:
         return hashlib.md5(unique_str.encode()).hexdigest()
 
     df['line_id'] = df.apply(generate_line_id, axis=1)
+
+    # Add product_category column based on style_id
+    def determine_product_category(style_id):
+        style_id_str = str(style_id)  # Convert to string to handle float values
+        if 'g' in style_id_str.lower():
+            return 'giro'
+        elif 'f' in style_id_str.lower():
+            return 'fox'
+        elif 'v' in style_id_str.lower():
+            return 'vex'
+        else:
+            return 'bulk'
+
+    df['product_category'] = df['style_id'].apply(determine_product_category)
+
+    # Split style_id into bag_count and bag_size for giro, fox, and vex
+    def split_style(style_id):
+        style_id_str = str(style_id)  # Convert to string to handle float values
+        match = re.search(r'(\d+)-(\d+)', style_id_str)
+        if match:
+            return int(match.group(1)), int(match.group(2))
+        return None, None
+
+    df[['bag_count', 'bag_size']] = df.apply(
+        lambda row: split_style(row['style_id']) if row['product_category'] in ['giro', 'fox', 'vex'] else (None, None),
+        axis=1,
+        result_type='expand'
+    )
+
     df['uploaded_at'] = now
 
     # Step 1: Filter out rows with duplicate line_id within the file

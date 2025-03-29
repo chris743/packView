@@ -58,8 +58,8 @@ class Pools (models.Model):
         return f"{self.id}"
 
 class Block(models.Model):
-    name = models.CharField(max_length=255, null=True, blank=True)
-    block_id = models.IntegerField(null=True, blank=False)
+    name = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    block_id = models.IntegerField(null=False, blank=False, unique=True, primary_key=True, default=0)
     ranch = models.ForeignKey(Ranch, on_delete=models.CASCADE, related_name="toranch")
     size = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # e.g., acres
     planted_commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE,related_name="tocommodity")
@@ -72,15 +72,19 @@ class Block(models.Model):
     
 class ProductionRuns(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False, max_length=36)
-    name = models.CharField(null=False, max_length=100)
     grower_block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name="production_runs")  # Unique related_name
     bins = models.IntegerField(null=False, default=0)
-    qc_report = models.FileField(upload_to='qc_reports/', null=True)
-    sizer_report = models.FileField(upload_to='sizer_reports/', null=True)
-    packout = models.FileField(upload_to='packouts/', null=True)
+    run_date = models.DateField(null=True)
+    location = models.CharField(null=True, blank=True)
+    pool = models.CharField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    row_order = models.IntegerField(null=True, blank=True)
+    #qc_report = models.FileField(upload_to='qc_reports/', null=True)
+    #sizer_report = models.FileField(upload_to='sizer_reports/', null=True)
+    #packout = models.FileField(upload_to='packouts/', null=True)
 
     def __str__(self):
-        return f"{self.name} - {self.grower_block}"
+        return f"{self.grower_block}-{self.run_date}"
     
 class LaborContractors(models.Model):
     name = models.CharField(null=False, max_length=100)

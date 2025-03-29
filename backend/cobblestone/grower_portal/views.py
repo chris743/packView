@@ -2,6 +2,10 @@ from rest_framework.viewsets import ModelViewSet
 from .models import Block
 from .serializers import BlockSerializer
 from rest_framework.exceptions import ValidationError
+from django.db import transaction
+from rest_framework.decorators import action
+from rest_framework import status
+from rest_framework.response import Response
 
 from .models import (Grower, 
                      Ranch,
@@ -81,6 +85,22 @@ class ProductionRunsViewSet(ModelViewSet):
     queryset = ProductionRuns.objects.all()
     serializer_class = ProductionRunsSerializer
 
+    @action(detail=False, methods=["post"], url_path="reorder")
+    def reorder(self, request):
+        rows = request.data.get("rows", [])
+        print("REORDER REQUESTED-------------",rows)
+
+        try:
+            with transaction.atomic():
+                for row in rows:
+                    row_id = row.get("id")
+                    row_order = row.get("row_order")
+                    if row_id is not None and row_order is not None:
+                        ProductionRuns.objects.filter(id=row_id).update(row_order=row_order)
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 class LaborContractorsViewSet(ModelViewSet):
     queryset = LaborContractors.objects.all()
     serializer_class = LaborContractorSerializer
@@ -153,3 +173,4 @@ class FileViewSet(ModelViewSet):
 class PoolViewSet(ModelViewSet):
     queryset = Pools.objects.all()
     serializer_class = PoolSerializer
+

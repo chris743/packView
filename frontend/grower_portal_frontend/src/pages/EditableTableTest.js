@@ -11,10 +11,13 @@ import EditableTable from '../components/EditableTable';
 
 import DeleteOutline from "@mui/icons-material/DeleteOutline";
 
-import { Button, IconButton } from '@mui/material';
+import { Box, Button, IconButton } from '@mui/material';
+
+import {DatePicker} from '@mui/x-date-pickers/DatePicker';
+
 const endpoint = 'commodities'
 
-const CommoditiesPage = () => {
+const TableTestPage = () => {
     const [data, setData] = useState([]);
     const [modalOpen, setModalOpen] = useState(false);
     const [currentCommodity, setCurrentCommodity] = useState(null);
@@ -54,12 +57,14 @@ const CommoditiesPage = () => {
     }
 
     const columns = [
-        { field: 'name', headerName: 'Description', editable: true },
-        { field: 'avgCtnPrice', headerName: 'Average Price', editable: true, minWidth: 120 },
-        { field: 'stdCtnCost', headerName: 'Standard Cost', editable: true, minWidth: 120 },
-        { field: 'packingCharge', headerName: 'Pack Charge', editable: true, minWidth: 120 },
-        { field: 'profitPerBag', headerName: 'Profit / Bag', editable: true, minWidth: 120 },
-        { field: 'promo', headerName: 'Marketing Charge', editable: true, minWidth: 150 },
+        { field: 'BlockID', headerName: 'BlockID', editable: true },
+        { field: 'blockName', headerName: 'BlockName', editable: true },
+        { field: 'commodity', headerName: 'Commodity', editable: true },
+        { field: 'variety', headerName: 'Variety', editable: true },
+        { field: 'pool', headerName: 'Pool', editable: true },
+        { field: 'pick_date', headerName: 'Pick Date', editable: true },
+        { field: 'bin_count', headerName: 'Bin Count', editable: true },
+        { field: 'location', headerName: 'Location', editable: true },
     ];
 
     const actions =[
@@ -73,7 +78,8 @@ const CommoditiesPage = () => {
 
     return (
         <div>
-            <h2>Commodities</h2>
+            <h2>Process Line Run Plan</h2>
+            <Box>
 
             <Button
                 variant="contained"
@@ -81,10 +87,16 @@ const CommoditiesPage = () => {
                 onClick={() => handleOpenModal()}
                 sx={{ marginBottom: 2 }}
             >
-                Add Commodity
+                Add Run
             </Button>
+            <DatePicker
+                label="Pick Date"
+                value={new Date()}
+                onChange={(date) => console.log(date)}
+                />
+            </Box>
            
-            <EditableTable columns={columns} data={data} saveFunction={handleSave} actions={actions}/>
+            <EditableTable columns={columns} saveFunction={handleSave} actions={actions}/>
             <ModalForm
                 open={modalOpen}
                 onClose={handleCloseModal}
@@ -104,4 +116,4 @@ const CommoditiesPage = () => {
     );
 };
 
-export default CommoditiesPage;
+export default TableTestPage;

@@ -11,6 +11,11 @@ class GrowerAdmin(admin.ModelAdmin):
     list_display = ("name", "grower_id", "grower_contact_email", "grower_contact_phone")
     search_fields = ("name",)
 
+@admin.register(Pools)
+class PoolsAdmin(admin.ModelAdmin):
+    list_display=('id', 'commodity', 'description', 'openDate', 'closeDate')
+    search_fields=('id',)
+
 @admin.register(Ranch)
 class RanchAdmin(admin.ModelAdmin):
     list_display = ("name", "grower", "location")
@@ -31,8 +36,8 @@ class PlannedHarvestAdmin(admin.ModelAdmin):
 
 @admin.register(ProductionRuns)
 class ProductionRunsAdmin(admin.ModelAdmin):
-    list_display = ("name", "grower_block", "bins")  # Corrected 'block' to 'grower_block'
-    search_fields = ("name", "grower_block__name")
+    list_display = ("grower_block", "bins")  # Corrected 'block' to 'grower_block'
+    search_fields = ("grower_block__name",)
 
 @admin.register(Receivings)
 class ReceivingsAdmin(admin.ModelAdmin):
@@ -67,11 +72,6 @@ class FolderAdmin(admin.ModelAdmin):
 class FileAdmin(admin.ModelAdmin):
     list_display=('folder', 'name', 'file', 'uploaded_at')
     search_fields=('name',)
-    
-@admin.register(Pools)
-class PoolsAdmin(admin.ModelAdmin):
-    list_display=('id', 'commodity', 'description', 'openDate', 'closeDate')
-    search_fields=('id',)
 
 @admin.register(HarvestPlansDate)
 class HarvestDatesAdmin(admin.ModelAdmin):

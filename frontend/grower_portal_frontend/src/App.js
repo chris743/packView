@@ -15,6 +15,12 @@ import { useThemeContext, ThemeContextProvider } from "./context/ThemeContext";
 import './App.css'
 import ReceivingPage from "./pages/ReceivingPage";
 import DaySchedulePage from "./pages/DaySchedulePage";
+import TableTestPage from "./pages/EditableTableTest";
+import ProcessPlanPage from "./pages/ProcessPlanPage";
+import { LicenseInfo } from '@mui/x-license-pro';
+
+LicenseInfo.setLicenseKey('6e791cd789df32edae46947575147663Tz0xMTA1MDMsRT0xNzc0NzQyMzk5MDAwLFM9cHJvLExNPXN1YnNjcmlwdGlvbixQVj1RMy0yMDI0LEtWPTI=');
+
 
 const AppContent = () => {
   const { isDarkMode } = useThemeContext();
@@ -60,6 +66,8 @@ const AppContent = () => {
               <Route path="/analysis/capacity" element={<CapacityPage />} />
               <Route path="/analysis/bin-inventory" element={<BinInventory />} />
               <Route path="/analysis/order-analysis" element={<OrdersAnalysis />} />
+              <Route path="/Test" element={<TableTestPage/>} />
+              <Route path="/process-plan" element={<ProcessPlanPage/>} />
             </Routes>
           </Router>
         </Box>

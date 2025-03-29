@@ -61,3 +61,18 @@ export const deleteData = async (endpoint, id) => {
     throw new Error('Failed to delete commodity');
   }
 };
+
+export const saveRowOrder = async (endpoint, orderedRows) => {
+  try {
+    const response = await axios.post(`${API_URL}/${endpoint}/reorder/`, {
+      rows: orderedRows.map((row) => ({
+        id: row.id,
+        row_order: row.row_order,
+      })),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error saving row order:", error);
+    throw new Error("Row order update failed");
+  }
+};
