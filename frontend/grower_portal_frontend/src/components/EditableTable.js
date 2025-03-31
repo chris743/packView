@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, useTheme, IconButton, Button } from "@mui/material";
+import { Box, useTheme, IconButton, Button, Menu, MenuItem } from "@mui/material";
 import { DataGridPro } from "@mui/x-data-grid-pro";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useGridApiRef } from '@mui/x-data-grid-pro';
@@ -12,9 +12,12 @@ const EditableTable = ({
   onSave,
   actions = [],
   onReorder,
+  onDelete,
 }) => {
   const theme = useTheme();
   const [rows, setRows] = useState(data || []);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [selectedRow, setSelectedRow] = useState(null);
 
   useEffect(() => {
     setRows(data || []);
@@ -78,7 +81,7 @@ const EditableTable = ({
     variant="contained"
     color="primary"
     onClick={() => {
-      const newRow = { id: uuidv4(), 
+      const newRow = { id: `temp-${uuidv4()}`, 
         row_order: rows.length, 
         ...Object.fromEntries(columns.map((col) => [col.field, ""]))
       };
@@ -122,8 +125,47 @@ const EditableTable = ({
             sortModel: [{ field: "row_order", sort: "asc" }],
           },
         }}
+        slotProps={{
+          row: {
+            onContextMenu: (event) => {
+              event.preventDefault();
+              const rowID = (event.currentTarget.getAttribute("data-id"));
+
+              const rowData = rows.find((row) => row.id === rowID);
+
+              setSelectedRow(rowID);
+              setContextMenu({
+                mouseX: event.clientX + 2,
+                mouseY: event.clientY - 6,
+              });
+          }
+        }}}
       />
     </Box>
+    <Menu
+      open={contextMenu !== null}
+      onClose={() => setContextMenu(null)}
+      anchorReference="anchorPosition"
+      anchorPosition={
+        contextMenu !== null
+          ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+          : undefined
+      }
+      >
+        <MenuItem
+          onClick={() => {
+            setContextMenu(null);
+            if (selectedRow) {
+              console.log("editing", selectedRow);
+              onDelete(selectedRow);
+            } else {
+              console.log("No row selected");
+            }
+          }}
+          >
+            Delete Row
+          </MenuItem>
+      </Menu>
     </>
   );
 };

@@ -75,6 +75,7 @@ class ProductionRuns(models.Model):
     grower_block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name="production_runs")  # Unique related_name
     bins = models.IntegerField(null=False, default=0)
     run_date = models.DateField(null=True)
+    pick_date = models.DateField(null=True)
     location = models.CharField(null=True, blank=True)
     pool = models.CharField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
