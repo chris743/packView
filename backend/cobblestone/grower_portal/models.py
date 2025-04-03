@@ -6,13 +6,13 @@ import os
 class Grower(models.Model):
     name = models.CharField(max_length=255)
     grower_id = models.IntegerField(null=True, blank=True)
-    grower_contact = models.CharField(blank=True, null=False, max_length=200)
+    grower_contact = models.CharField(blank=True, max_length=200)
     grower_contact_email = models.EmailField(blank=True, null=True)
     grower_contact_phone = models.CharField(max_length=20, blank=True, null=True)
-    contract = models.FileField(upload_to="./grower_contracts", null=True)
-    property_manger_name = models.CharField(max_length=255, null=True)
-    property_manager_phone = models.CharField(max_length=255, null=True)
-    property_manager_email = models.CharField(max_length=255, null=True)
+    contract = models.FileField(upload_to="./grower_contracts", null=True, blank=True)
+    property_manger_name = models.CharField(max_length=255, null=True, blank=True)
+    property_manager_phone = models.CharField(max_length=255, null=True, blank=True)
+    property_manager_email = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -27,25 +27,25 @@ class Ranch(models.Model):
         return f"{self.name} ({self.grower.name})"
 
 class Commodity (models.Model):
-    name = models.CharField(max_length=30, blank=False)
-    avgCtnPrice = models.FloatField(null=False, default=0)
-    stdCtnCost = models.FloatField(null=False, default=0)
-    pricePerPound = models.FloatField(null=False, default=0)
-    standardCtnWeight = models.FloatField(null=False, default=0)
-    packingCharge = models.FloatField(null=False, default=0)
-    profitPerBag = models.FloatField(null=True, default=0)
-    promo = models.FloatField(null=False, default=0)
+    id = models.CharField(max_length=30, blank=False, unique=True, primary_key=True)
+    avgCtnPrice = models.FloatField(null=True, blank=True, default=0)
+    stdCtnCost = models.FloatField(null=True, blank=True, default=0)
+    pricePerPound = models.FloatField(null=True, blank=True, default=0)
+    standardCtnWeight = models.FloatField(null=True, blank=True, default=0)
+    packingCharge = models.FloatField(null=True, blank=True, default=0)
+    profitPerBag = models.FloatField(null=True, blank=True, default=0)
+    promo = models.FloatField(null=True, blank=True, default=0)
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.id}"
     
     
 class Varieties (models.Model):
-    name = models.CharField(max_length=30)
+    id = models.CharField(max_length=30, blank=False, null=False, unique=True, primary_key=True)
     commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name="varietytocommodity")
     
     def __str__(self):
-        return self.name
+        return self.id
     
 class Pools (models.Model):
     id = models.CharField(unique=True, primary_key=True, max_length=15)
@@ -60,11 +60,12 @@ class Pools (models.Model):
 class Block(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True, unique=True)
     block_id = models.IntegerField(null=False, blank=False, unique=True, primary_key=True, default=0)
+    krpc_id = models.IntegerField(null=True, blank=True)
     ranch = models.ForeignKey(Ranch, on_delete=models.CASCADE, related_name="toranch")
     size = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # e.g., acres
-    planted_commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE,related_name="tocommodity")
-    planted_variety = models.ForeignKey(Varieties, on_delete=models.CASCADE, related_name="tovariety")
-    gib_applied = models.BooleanField(null=True)
+    variety = models.ForeignKey(Varieties, on_delete=models.CASCADE, related_name="tovariety")
+    tree_spacing = models.DecimalField(max_digits=10, null=True, blank=True, decimal_places=2)
+    row_spacing = models.DecimalField(max_digits=10, null=True, blank=True, decimal_places=2)
 
     def __str__(self):
         return f"{self.name} ({self.ranch.name})"
@@ -80,6 +81,7 @@ class ProductionRuns(models.Model):
     pool = models.CharField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     row_order = models.IntegerField(null=True, blank=True)
+    run_status = models.CharField(null=True, blank=True)
     #qc_report = models.FileField(upload_to='qc_reports/', null=True)
     #sizer_report = models.FileField(upload_to='sizer_reports/', null=True)
     #packout = models.FileField(upload_to='packouts/', null=True)

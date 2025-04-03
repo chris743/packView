@@ -8,8 +8,8 @@ import {
 } from '../api/api';
 
 import EditableTable from '../components/EditableTable';
-import { Select, MenuItem, TextField, Box, Button } from '@mui/material';
-import { ConnectingAirportsOutlined } from '@mui/icons-material';
+import { Select, MenuItem, TextField, Box, Button, Paper, Table, TableBody, TableRow, TableData, TableCell, Autocomplete } from '@mui/material';
+import Popper from "@mui/material/Popper"
 
 const endpoint = "production-runs";
 
@@ -30,6 +30,17 @@ const ProcessPlanPage = () => {
     useEffect(() => {
         loadData();
     }, []);
+
+    const flattnedData = data.map(item => flattenObject(item));
+    const filteredData = flattnedData.filter(item => item.run_date === selectedDate);
+
+    const { start: weekStart, end: weekEnd } = getCurrentWeekRange();
+
+    const weeklyData = flattnedData.filter((row) => {
+        const runDate = row.run_date || row.pick_date;
+        return runDate >= weekStart && runDate <= weekEnd;
+    });
+
 
     const handleSave = async (updatedRow) => {
         console.log("Saving row:", updatedRow);
@@ -78,13 +89,9 @@ const ProcessPlanPage = () => {
             result[`${prefix}${key}`] = obj[key];
           }
         }
+        console.log(result);
         return result;
       }
-      
-
-    const flattnedData = data.map(item => flattenObject(item));
-    const flattenedBlocks = blocks.map(item => flattenObject(item));
-    const filteredData = flattnedData.filter(item => item.run_date === selectedDate);
 
     const handleReorder = async (reorderedRows) => {
         try {
@@ -106,6 +113,61 @@ const ProcessPlanPage = () => {
         const iso = newDate.toISOString().slice(0, 10);
         setSelectedDate(iso);
       };
+
+    function getCurrentWeekRange() {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 (Sun) - 6 (Sat)
+        const monday = new Date(today);
+        const sunday = new Date(today);
+      
+        monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+        sunday.setDate(monday.getDate() + 6);
+      
+        return {
+          start: monday.toISOString().slice(0, 10),
+          end: sunday.toISOString().slice(0, 10),
+        };
+      }
+    const CustomPopper = (props) => (
+        <Popper
+          {...props}
+          modifiers={[
+            {
+              name: 'offset',
+              options: {
+                offset: [0, 6],
+              },
+            },
+          ]}
+          style={{ width: 400 }} // 👈 make this whatever width you want
+        />
+      );
+      
+    const summaryByCommodity = filteredData.reduce((acc, row) => {
+        const commodity = row["grower_block.planted_variety.commodity.name"] || "Unknown";
+        const bins = parseFloat(row.bins) || 0;
+      
+        if (!acc[commodity]) {
+          acc[commodity] = 0;
+        }
+        acc[commodity] += bins;
+      
+        return acc;
+      }, {});
+
+    const weeklySummary = weeklyData.reduce((acc, row) => {
+        const commodity = row["grower_block.planted_variety.commodity.name"] || "Unknown";
+        const bins = parseFloat(row.bins) || 0;
+      
+        if (!acc[commodity]) {
+          acc[commodity] = 0;
+        }
+        acc[commodity] += bins;
+      
+        return acc;
+      }, {});
+      
+      
       
     return (
         <div style={{display: "flex", width: '100%'}}>
@@ -133,62 +195,56 @@ const ProcessPlanPage = () => {
                     }}
                     onDelete={handleDelete}
                     columns={[
-                        { field: 'grower_block.ranch.grower.name', headerName: 'Grower Name', editable: false },
-                        { field: 'grower_block.ranch.name', headerName: 'Ranch Name', editable: false },
-                        { field: 'grower_block.planted_variety.commodity.name', headerName: 'Commodity', editable: false },
-                        { field: 'grower_block.planted_variety.name', headerName: 'Variety', editable: false },
+                        { field: 'grower_block.ranch.grower.name', headerName: 'Grower Name', editable: false, width: 200 },
+                        { field: 'grower_block.name', headerName: 'Grower Name', editable: false, width: 250 },
+                        { field: 'grower_block.variety.commodity.id', headerName: 'Commodity', editable: false },
+                        { field: 'grower_block.variety.id', headerName: 'Variety', editable: false },
                         {
                             field: 'grower_block.block_id',
                             headerName: 'Block',
                             editable: true,
-                          
-                            // ✅ Show dropdown in edit mode
+                            width: 100,
                             renderEditCell: (params) => {
                               const selectedId = params.value || "";
-                              const selectedBlock = flattenedBlocks.find((b) => String(b.block_id) === String(selectedId));
+                              const selectedBlock = blocks.find(b => String(b.block_id) === String(selectedId));
                           
                               return (
-                                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center' }}>
-                                  <Select
-                                    fullWidth
-                                    size="small"
-                                    value={selectedId}
-                                    renderValue={(value) => {
-                                      const selected = flattenedBlocks.find(b => String(b.block_id) === String(value));
-                                      return selected
-                                        ? `${selected.block_id} — ${selected.name} — ${selected["ranch.grower.name"]}`
-                                        : <em style={{ color: '#999' }}>Select a Block</em>;
-                                    }}
-                                    onChange={(e) => {
-                                      const selected = flattenedBlocks.find((b) => b.block_id === e.target.value);
-                                      if (selected) {
-                                        // ✅ Update the value used for this field
-                                        params.api.setEditCellValue({
-                                          id: params.id,
-                                          field: "grower_block.block_id",
-                                          value: selected.block_id,
-                                        });
+                                <Autocomplete
+                                  fullWidth
+                                  size="small"
+                                  options={blocks}
+                                  getOptionLabel={(option) =>
+                                    `${option.block_id} — ${option.name} — ${option["ranch.grower.name"]}`
+                                  }
+                                  value={selectedBlock || null}
+                                  isOptionEqualToValue={(option, value) => option.block_id === value.block_id}
+                                  slots={{
+                                    popper: CustomPopper,
+                                  }}
+                                  onChange={(_, newValue) => {
+                                    if (newValue) {
+                                      params.api.setEditCellValue({
+                                        id: params.id,
+                                        field: "grower_block.block_id",
+                                        value: newValue.block_id,
+                                      });
                           
-                                        // ✅ Update dependent fields
-                                        params.api.updateRows([{
-                                          ...params.row,
-                                          "grower_block.block_id": selected.block_id,
-                                          "grower_block.name": selected.name,
-                                          "grower_block.ranch.name": selected["ranch.name"],
-                                          "grower_block.ranch.grower.name": selected["ranch.grower.name"],
-                                          "grower_block.planted_variety.name": selected["planted_variety.name"],
-                                          "grower_block.planted_variety.commodity.name": selected["planted_variety.commodity.name"]
-                                        }]);
-                                      }
-                                    }}
-                                  >
-                                    {flattenedBlocks.map((block) => (
-                                      <MenuItem key={block.block_id} value={block.block_id}>
-                                        {block.block_id} — {block.name} — {block["ranch.grower.name"]}
-                                      </MenuItem>
-                                    ))}
-                                  </Select>
-                                </Box>
+                                      // Update dependent fields
+                                      params.api.updateRows([{
+                                        ...params.row,
+                                        "grower_block.block_id": newValue.block_id,
+                                        "grower_block.name": newValue.name,
+                                        "grower_block.ranch.name": newValue["ranch.name"],
+                                        "grower_block.ranch.grower.name": newValue["ranch.grower.name"],
+                                        "grower_block.variety.id": newValue["variety.id"],
+                                        "grower_block.variety.commodity.id": newValue["variety.commodity.id"],
+                                      }]);
+                                    }
+                                  }}
+                                  renderInput={(params) => (
+                                    <TextField {...params} label="Select Block" />
+                                  )}
+                                />
                               );
                             }
                           },
@@ -220,14 +276,100 @@ const ProcessPlanPage = () => {
                           },
                         { field: 'bins', headerName: 'Bins', editable: true },
                         { field: 'location', headerName: 'Location', editable: true },
-                        { field: 'notes', headerName: 'Notes', editable: true }
+                        {
+                            field: "run_status",
+                            headerName: "Status",
+                            editable: true,
+                            width: 160,
+                            renderCell: (params) => {
+                              const value = params.value;
+                              const dotStyle = {
+                                height: 10,
+                                width: 10,
+                                borderRadius: "50%",
+                                display: "inline-block",
+                                marginRight: 8,
+                              };
+                          
+                              const getStatusIcon = () => {
+                                switch (value) {
+                                  case "In process":
+                                    return <span style={{ ...dotStyle, backgroundColor: "green" }} />;
+                                  case "Hold":
+                                    return <span style={{ ...dotStyle, backgroundColor: "red" }} />;
+                                  case "Complete":
+                                    return (
+                                      <span style={{ color: "green", marginRight: 8 }}>
+                                        ✅
+                                      </span>
+                                    );
+                                  default:
+                                    return <span style={{ ...dotStyle, backgroundColor: "gray" }} />;
+                                }
+                              };
+                          
+                              return (
+                                <span>
+                                  {getStatusIcon()}
+                                  {value || "Not started"}
+                                </span>
+                              );
+                            },
+                            renderEditCell: (params) => (
+                              <Select
+                                value={params.value || "Not started"}
+                                fullWidth
+                                size="small"
+                                onChange={(e) => {
+                                  params.api.setEditCellValue({
+                                    id: params.id,
+                                    field: "run_status",
+                                    value: e.target.value,
+                                  });
+                                }}
+                              >
+                                <MenuItem value="Not started">Not started</MenuItem>
+                                <MenuItem value="In process">In process</MenuItem>
+                                <MenuItem value="Hold">Hold</MenuItem>
+                                <MenuItem value="Complete">Complete</MenuItem>
+                              </Select>
+                            ),
+                          },
+                          { field: 'notes', headerName: 'Notes', editable: true }
                       ]}
                     onReorder={handleReorder}
                     blockOption = {blocks}
                 />
             </div>
             <div style={{ flex: 1 }}>
-                <h2>Export Needs</h2>
+                <Box>
+                    <Paper style={{padding: '1rem', margin: '.5rem'}}>
+                        Day Summary:
+                        <Table>
+                            <TableBody>
+                                {Object.entries(summaryByCommodity).map(([commodity, total]) =>(
+                                    <TableRow key={commodity}>
+                                        <TableCell>{commodity}</TableCell>
+                                        <TableCell>{total}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Paper>
+                    <Paper style={{padding: '1rem', margin: '.5rem' }}>
+                        Week Summary:
+                        <Table>
+                            <TableBody>
+                                {Object.entries(weeklySummary).map(([commodity, total]) =>(
+                                    <TableRow key={commodity}>
+                                        <TableCell>{commodity}</TableCell>
+                                        <TableCell>{total}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Paper>
+                </Box>
 
             </div>
         </div>

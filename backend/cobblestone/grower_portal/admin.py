@@ -3,8 +3,8 @@ from .models import Grower, Ranch, Pools, Block, Commodity, FieldContractors, Pl
 
 @admin.register(Commodity)
 class CommodityAdmin(admin.ModelAdmin):
-    list_display = ("name", "avgCtnPrice", "stdCtnCost", "pricePerPound", "standardCtnWeight", "packingCharge", "profitPerBag", "promo")
-    search_fields = ("name",)
+    list_display = ("id", "avgCtnPrice", "stdCtnCost", "pricePerPound", "standardCtnWeight", "packingCharge", "profitPerBag", "promo")
+    search_fields = ("id",)
 
 @admin.register(Grower)
 class GrowerAdmin(admin.ModelAdmin):
@@ -24,9 +24,9 @@ class RanchAdmin(admin.ModelAdmin):
 
 @admin.register(Block)
 class BlockAdmin(admin.ModelAdmin):
-    list_display = ("name", "block_id", "ranch", "size", "planted_commodity", "planted_variety")
-    search_fields = ("name", "ranch__name", "planted_commodity__name")
-    list_filter = ("ranch", "planted_commodity")
+    list_display = ("name", "block_id", "ranch", "size", "variety")
+    search_fields = ("name", "ranch__name")
+    list_filter = ("ranch", "variety")
 
 @admin.register(PlannedHarvest)
 class PlannedHarvestAdmin(admin.ModelAdmin):
@@ -46,8 +46,8 @@ class ReceivingsAdmin(admin.ModelAdmin):
 
 @admin.register(Varieties)
 class VarietiesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'commodity')
-    search_fields = ('name',)
+    list_display = ('id', 'commodity')
+    search_fields = ('id',)
 
 @admin.register(LaborContractors)
 class LaborContractorsAdmin(admin.ModelAdmin):

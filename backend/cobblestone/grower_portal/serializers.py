@@ -32,9 +32,7 @@ class BlockSerializer(serializers.ModelSerializer):
     ranch_id = serializers.PrimaryKeyRelatedField(
         queryset=Ranch.objects.all(), write_only=True, source='ranch'
     )
-    planted_variety = VarietiesSerializer(read_only=True)
-    planted_commodity = serializers.PrimaryKeyRelatedField(
-        queryset=Commodity.objects.all(), write_only=True)
+    variety = VarietiesSerializer(read_only=True)
 
     class Meta:
         model = Block

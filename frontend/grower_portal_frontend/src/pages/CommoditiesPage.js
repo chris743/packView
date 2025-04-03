@@ -54,7 +54,7 @@ const CommoditiesPage = () => {
     }
 
     const columns = [
-        { field: 'name', headerName: 'Description', editable: true },
+        { field: 'id', headerName: 'Name', editable: true },
         { field: 'avgCtnPrice', headerName: 'Average Price', editable: true, minWidth: 120 },
         { field: 'stdCtnCost', headerName: 'Standard Cost', editable: true, minWidth: 120 },
         { field: 'packingCharge', headerName: 'Pack Charge', editable: true, minWidth: 120 },
