@@ -23,6 +23,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import ParkIcon from '@mui/icons-material/Park';
 import BuildIcon from '@mui/icons-material/Build';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import SettingsIcon from '@mui/icons-material/Settings';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 
 const Sidebar = () => {
@@ -142,6 +143,12 @@ const Sidebar = () => {
                         </ListItem>
                     </List>
                 </Collapse>
+                <ListItem button component="a" href="/settings" sx={{ textDecoration: "none", color: "inherit" }}>
+                    <ListItemIcon>
+                        <SettingsIcon />
+                    </ListItemIcon>
+                    {!isCollapsed && <ListItemText primary="Settings" />}
+                </ListItem>
             </List>
         </Drawer>
     );

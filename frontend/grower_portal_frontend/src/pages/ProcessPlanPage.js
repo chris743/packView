@@ -29,6 +29,15 @@ const ProcessPlanPage = () => {
 
     useEffect(() => {
         loadData();
+        const tvMode = localStorage.getItem("tvMode") === "true";
+        if (!tvMode) return;
+
+        const interval = setInterval(() => {
+            console.log("refreshing")
+            loadData();
+        }, 6000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const flattnedData = data.map(item => flattenObject(item));
@@ -54,6 +63,7 @@ const ProcessPlanPage = () => {
           notes: updatedRow.notes || "",
           pool: updatedRow.pool || null,
           row_order: updatedRow.row_order || null,
+          run_status: updatedRow.run_status || "Not Started"
         };
         console.log(JSON.stringify(payload));
       
@@ -144,7 +154,7 @@ const ProcessPlanPage = () => {
       );
       
     const summaryByCommodity = filteredData.reduce((acc, row) => {
-        const commodity = row["grower_block.planted_variety.commodity.name"] || "Unknown";
+        const commodity = row["grower_block.variety.commodity.id"] || "Unknown";
         const bins = parseFloat(row.bins) || 0;
       
         if (!acc[commodity]) {
@@ -156,7 +166,7 @@ const ProcessPlanPage = () => {
       }, {});
 
     const weeklySummary = weeklyData.reduce((acc, row) => {
-        const commodity = row["grower_block.planted_variety.commodity.name"] || "Unknown";
+        const commodity = row["grower_block.variety.commodity.id"] || "Unknown";
         const bins = parseFloat(row.bins) || 0;
       
         if (!acc[commodity]) {
@@ -169,23 +179,63 @@ const ProcessPlanPage = () => {
       
       
       
-    return (
-        <div style={{display: "flex", width: '100%'}}>
-            <div style={{flex: 3, paddingRight: '1rem'}}>
-                <h1>Process Plan</h1>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-                    <label style={{ marginRight: '1rem' }}>Run Date:</label>
+      return (
+        <>
+            <div style={{ display: "flex", width: "100%", alignItems: "flex-start" }}>
+                {/* Left: Title + Date Picker */}
+                <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                    <h1 style={{ marginBottom: "1rem" }}>Process Plan</h1>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <label>Run Date:</label>
                     <TextField
                         type="date"
                         size="small"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
                     />
-                    <Button variant='outlined' style={{marginLeft: "1rem", marginRight: "1rem"}} onClick={() => changeDateBy(-1)}> Prev. Day</Button>
-                    <Button variant='outlined' onClick={() => changeDateBy(1)}> Next Day</Button>
-
+                    <Button variant="outlined" onClick={() => changeDateBy(-1)}>
+                        Prev. Day
+                    </Button>
+                    <Button variant="outlined" onClick={() => changeDateBy(1)}>
+                        Next Day
+                    </Button>
+                    </div>
                 </div>
 
+                {/* Right: Day & Week summaries */}
+                <div style={{ display: "flex", flexDirection: "row", gap: "1rem", marginLeft: "2rem" }}>
+                    {/* Day Summary */}
+                    <Paper style={{ padding: "1rem", minWidth: "200px" }}>
+                    <strong>Day Summary:</strong>
+                    <Table size="small">
+                        <TableBody>
+                        {Object.entries(summaryByCommodity).map(([commodity, total]) => (
+                            <TableRow key={commodity}>
+                            <TableCell>{commodity}</TableCell>
+                            <TableCell>{total}</TableCell>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                    </Paper>
+
+                    {/* Week Summary */}
+                    <Paper style={{ padding: "1rem", minWidth: "200px" }}>
+                    <strong>Week Summary:</strong>
+                    <Table size="small">
+                        <TableBody>
+                        {Object.entries(weeklySummary).map(([commodity, total]) => (
+                            <TableRow key={commodity}>
+                            <TableCell>{commodity}</TableCell>
+                            <TableCell>{total}</TableCell>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                    </Paper>
+                </div>
+                </div>
 
                 <EditableTable
                     data={filteredData}
@@ -340,39 +390,8 @@ const ProcessPlanPage = () => {
                     onReorder={handleReorder}
                     blockOption = {blocks}
                 />
-            </div>
-            <div style={{ flex: 1 }}>
-                <Box>
-                    <Paper style={{padding: '1rem', margin: '.5rem'}}>
-                        Day Summary:
-                        <Table>
-                            <TableBody>
-                                {Object.entries(summaryByCommodity).map(([commodity, total]) =>(
-                                    <TableRow key={commodity}>
-                                        <TableCell>{commodity}</TableCell>
-                                        <TableCell>{total}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Paper>
-                    <Paper style={{padding: '1rem', margin: '.5rem' }}>
-                        Week Summary:
-                        <Table>
-                            <TableBody>
-                                {Object.entries(weeklySummary).map(([commodity, total]) =>(
-                                    <TableRow key={commodity}>
-                                        <TableCell>{commodity}</TableCell>
-                                        <TableCell>{total}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Paper>
-                </Box>
-
-            </div>
-        </div>
+        </>
+    
     )
 }
 
