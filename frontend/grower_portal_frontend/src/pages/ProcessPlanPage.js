@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     fetchData,
     editData,
@@ -13,6 +14,7 @@ import Popper from "@mui/material/Popper"
 
 const endpoint = "production-runs";
 
+
 const ProcessPlanPage = () => {
     const [data, setData] = useState([]);
     const [blocks, setBlocks] = useState([]);
@@ -25,6 +27,12 @@ const ProcessPlanPage = () => {
         const blocks = await fetchData("blocks");
         setBlocks(blocks);
         setData(data.sort((a, b) => a.row_order - b.row_order));
+    };
+    const navigate = useNavigate();
+
+    const handleViewDetails = (id) => {
+        console.log("navigating to details for ID:", id);
+        navigate(`/runs/${id}`);
     };
 
     useEffect(() => {
@@ -63,7 +71,8 @@ const ProcessPlanPage = () => {
           notes: updatedRow.notes || "",
           pool: updatedRow.pool || null,
           row_order: updatedRow.row_order || null,
-          run_status: updatedRow.run_status || "Not Started"
+          run_status: updatedRow.run_status || "Not Started",
+          batch_id: updatedRow.batch_id || null,
         };
         console.log(JSON.stringify(payload));
       
@@ -99,7 +108,6 @@ const ProcessPlanPage = () => {
             result[`${prefix}${key}`] = obj[key];
           }
         }
-        console.log(result);
         return result;
       }
 
@@ -244,6 +252,7 @@ const ProcessPlanPage = () => {
                         await handleSave(updatedRow);
                     }}
                     onDelete={handleDelete}
+                    onViewDetails={handleViewDetails}
                     columns={[
                         { field: 'grower_block.ranch.grower.name', headerName: 'Grower Name', editable: false, width: 200 },
                         { field: 'grower_block.name', headerName: 'Grower Name', editable: false, width: 250 },

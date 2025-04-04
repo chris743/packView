@@ -4,6 +4,7 @@ import { DataGridPro } from "@mui/x-data-grid-pro";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useGridApiRef } from '@mui/x-data-grid-pro';
 import {v4 as uuidv4} from 'uuid';
+import { WindowSharp } from "@mui/icons-material";
 
 
 const EditableTable = ({
@@ -13,6 +14,7 @@ const EditableTable = ({
   actions = [],
   onReorder,
   onDelete,
+  onViewDetails,
 }) => {
   const theme = useTheme();
   const [rows, setRows] = useState(data || []);
@@ -62,14 +64,61 @@ const EditableTable = ({
     onReorder?.(reorderedRows);
   };
 
-  const handleRowUpdate = async (updatedRow, oldRow) => {
+  const importTagFile = async (row) => {
     try {
-      await onSave(updatedRow, oldRow); // ✅ call parent save
-      const updatedRows = rows.map((r) => (r.id === updatedRow.id ? updatedRow : r));
-      setRows(updatedRows);
+      console.log("🔄 Running tag file import for:", row.batch);
+  
+      // This could call your API endpoint
+      const response = await fetch(`/api/import-tag/${row.batch}/`, {
+        method: "POST",
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to import tag file.");
+      }
+  
+      const result = await response.json();
+      console.log("✅ Tag file imported:", result);
+    } catch (error) {
+      console.error("❌ Error importing tag file:", error);
+    }
+  };  
+
+  const handleRowUpdate = async (newRow, oldRow) => {
+    let updatedRow = { ...newRow };
+  
+    // Detect status change to "In Process"
+    if (
+      newRow.run_status !== oldRow.run_status &&
+      newRow.run_status === "In process" &&
+      !newRow.batch
+    ) {
+      const batchInput = window.prompt("Enter batch number for this run:");
+      if (batchInput) {
+        updatedRow.batch_id = batchInput;
+        updatedRow.time_started = new Date().toISOString();
+      } else {
+        // Cancel update if no batch entered
+        return oldRow;
+      }
+    }
+
+    if (
+      newRow.run_status !== oldRow.run_status &&
+      newRow.run_status === "Complete" &&
+      !newRow.batch_id
+    ) {
+      updatedRow.time_completed = new Date().toISOString();
+      console.log(`Scheduling tag file import for batch: ${newRow.batch}`);
+      setTimeout(() => {
+      importTagFile(newRow); // 👈 define this function below
+    }, 10 * 60 * 1000); // 10 minutes in milliseconds
+  }
+    try {
+      await onSave(updatedRow);
       return updatedRow;
     } catch (error) {
-      console.error("Auto-save failed:", error);
+      console.error("Failed to save row:", error);
       return oldRow;
     }
   };
@@ -151,21 +200,29 @@ const EditableTable = ({
           ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
           : undefined
       }
+    >
+      <MenuItem
+        onClick={() => {
+          setContextMenu(null);
+          if (selectedRow?.id) {
+            onDelete?.(selectedRow);
+          }
+        }}
       >
-        <MenuItem
-          onClick={() => {
-            setContextMenu(null);
-            if (selectedRow) {
-              console.log("editing", selectedRow);
-              onDelete(selectedRow);
-            } else {
-              console.log("No row selected");
-            }
-          }}
-          >
-            Delete Row
-          </MenuItem>
-      </Menu>
+        Delete Row
+      </MenuItem>
+
+      <MenuItem
+        onClick={() => {
+          setContextMenu(null);
+          console.log(selectedRow);
+          onViewDetails?.(selectedRow);
+          
+        }}
+      >
+        View Details
+      </MenuItem>
+    </Menu>
     </>
   );
 };

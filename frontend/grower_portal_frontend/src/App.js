@@ -19,6 +19,7 @@ import TableTestPage from "./pages/EditableTableTest";
 import ProcessPlanPage from "./pages/ProcessPlanPage";
 import { LicenseInfo } from '@mui/x-license-pro';
 import SettingsPage from "./pages/SettingsPage";
+import RunDetailsPage from "./pages/RunDetailsPage";
 
 LicenseInfo.setLicenseKey('6e791cd789df32edae46947575147663Tz0xMTA1MDMsRT0xNzc0NzQyMzk5MDAwLFM9cHJvLExNPXN1YnNjcmlwdGlvbixQVj1RMy0yMDI0LEtWPTI=');
 
@@ -70,6 +71,7 @@ const AppContent = () => {
               <Route path="/Test" element={<TableTestPage/>} />
               <Route path="/process-plan" element={<ProcessPlanPage/>} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/runs/:runId" element={<RunDetailsPage />} />
             </Routes>
           </Router>
         </Box>
