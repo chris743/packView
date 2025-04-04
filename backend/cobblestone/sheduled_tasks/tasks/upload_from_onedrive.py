@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime, date
 import hashlib
 import tkinter as tk
-from download_file import download_from_onedrive
+from .download_file import download_from_onedrive
 
 def onedrive_upload():
     # Database connection details

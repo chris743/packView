@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Grower, Ranch, Pools, Block, HarvestPlansDate, Commodity, FieldContractors, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File
+from .models import Grower, Ranch, Pools, Block, HarvestPlansDate, Commodity, FieldContractors, PlannedHarvest, Receivings, ProductionRuns, Varieties, LaborContractors, TruckingContractors, Folder, File, SizerReport
 import calendar
 class GrowerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -123,11 +123,17 @@ class PlannedHarvestSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Each date must have 'date' and 'estimated_bins' fields.")
         return value
     
+class SizerReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SizerReport
+        fields = ['raw_JSON',]
+
 class ProductionRunsSerializer(serializers.ModelSerializer):
     grower_block = BlockSerializer(read_only=True)
     grower_block_id = serializers.PrimaryKeyRelatedField(
         queryset=Block.objects.all(), write_only=True, source='grower_block'
     )
+    sizer_data = SizerReportSerializer(read_only=True)
     variety = VarietiesSerializer(read_only=True)
 
     class Meta:

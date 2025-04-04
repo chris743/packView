@@ -82,12 +82,17 @@ class ProductionRuns(models.Model):
     notes = models.TextField(null=True, blank=True)
     row_order = models.IntegerField(null=True, blank=True)
     run_status = models.CharField(null=True, blank=True)
-    #qc_report = models.FileField(upload_to='qc_reports/', null=True)
-    #sizer_report = models.FileField(upload_to='sizer_reports/', null=True)
-    #packout = models.FileField(upload_to='packouts/', null=True)
+    batch_id = models.CharField(null=True, blank=True, max_length=50)
+    time_started = models.DateTimeField(null=True, blank=True)
+    time_completed = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.grower_block}-{self.run_date}"
+    
+class SizerReport(models.Model):
+    process_run = models.OneToOneField(ProductionRuns, on_delete=models.CASCADE, related_name="sizer_data")
+    raw_JSON=models.JSONField(null=True, blank=True)
+    imported_at=models.DateTimeField(auto_now_add=True, null=True)
     
 class LaborContractors(models.Model):
     name = models.CharField(null=False, max_length=100)

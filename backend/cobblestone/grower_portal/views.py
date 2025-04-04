@@ -1,4 +1,5 @@
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.generics import RetrieveAPIView
 from .models import Block
 from .serializers import BlockSerializer
 from rest_framework.exceptions import ValidationError
@@ -6,6 +7,7 @@ from django.db import transaction
 from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.response import Response
+import os
 
 from .models import (Grower, 
                      Ranch,
@@ -100,6 +102,17 @@ class ProductionRunsViewSet(ModelViewSet):
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=True, methods=["get"], url_path="details")
+    def get_details(self, request, pk=None):
+        """
+        Retrieve details for a specific production run.
+        """
+        try:
+            run = self.get_object()
+            serializer = self.get_serializer(run)
+            return Response(serializer.data)
+        except ProductionRuns.DoesNotExist:
+            return Response({"error": "Production run not found."}, status=status.HTTP_404_NOT_FOUND)
 
 class LaborContractorsViewSet(ModelViewSet):
     queryset = LaborContractors.objects.all()
