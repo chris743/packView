@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, useTheme, IconButton, Button, Menu, MenuItem } from "@mui/material";
+import { Box, useTheme, IconButton, Button, Menu, MenuItem, Select } from "@mui/material";
 import { DataGridPro } from "@mui/x-data-grid-pro";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useGridApiRef } from '@mui/x-data-grid-pro';
@@ -29,6 +29,14 @@ const EditableTable = ({
   const [contextMenu, setContextMenu] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [density, setDensity] = useState(() => {
+    return localStorage.getItem("tableDensity") || "compact";
+  });
+  const [densityMenuAnchorEl, setDensityMenuAnchorEl] = useState(null);
+  const [submenuOpen, setSubmenuOpen] = useState(false);
+  const [submenuAnchorEl, setSubmenuAnchorEl] = useState(null);
+
+
 
   useEffect(() => {
     setRows(data || []);
@@ -156,16 +164,16 @@ const EditableTable = ({
     Add Line
   </Button>
     <Box
-      sx={{
-        overflowX: "auto",
-        backgroundColor: theme.palette.background.paper,
-        borderRadius: "8px",
-        boxShadow:
-          theme.palette.mode === "dark"
-            ? "0px 4px 10px rgba(0, 0, 0, 0.3)"
-            : "0px 4px 10px rgba(0, 0, 0, 0.1)",
-      }}
-    >
+            sx={{
+              overflowX: "auto",
+              backgroundColor: theme.palette.background.paper,
+              borderRadius: "8px",
+              boxShadow:
+                theme.palette.mode === "dark"
+                  ? "0px 4px 10px rgba(0, 0, 0, 0.3)"
+                  : "0px 4px 10px rgba(0, 0, 0, 0.1)",
+            }}
+          >
       <DataGridPro
         apiRef={apiRef}
         rows={rows}
@@ -174,6 +182,7 @@ const EditableTable = ({
         processRowUpdate={handleRowUpdate}
         rowReordering
         onRowOrderChange={handleRowOrderChange}
+        density={density}
         experimentalFeatures={{ newEditingApi: true }}
         onProcessRowUpdateError={(error) => console.error("Row update failed:", error)}
         getRowId={(row) => row.id}
@@ -222,6 +231,19 @@ const EditableTable = ({
       </MenuItem>
 
       <MenuItem
+        onMouseEnter={(e) => {
+          setSubmenuAnchorEl(e.currentTarget);
+          setSubmenuOpen(true);
+        }}
+        onMouseLeave={() => {
+          setTimeout(() => setSubmenuOpen(false), 300);
+        }}
+      >
+        Density
+      </MenuItem>
+
+
+      <MenuItem
         onClick={() => {
           setContextMenu(null);
           setConfirmOpen(true);
@@ -230,6 +252,35 @@ const EditableTable = ({
         Delete Row
     </MenuItem>
     </Menu>
+
+    <Menu
+      anchorEl={submenuAnchorEl}
+      open={submenuOpen}
+      onClose={() => setSubmenuOpen(false)}
+      anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      transformOrigin={{ vertical: "top", horizontal: "left" }}
+      MenuListProps={{
+        onMouseEnter: () => setSubmenuOpen(true),
+        onMouseLeave: () => setSubmenuOpen(false),
+      }}
+    >
+      {["standard", "comfortable", "compact"].map((option) => (
+        <MenuItem
+          key={option}
+          selected={option === density}
+          onClick={() => {
+            setDensity(option);
+            localStorage.setItem("tableDensity", option);
+            setSubmenuOpen(false);
+            setContextMenu(null);
+          }}
+        >
+          {option.charAt(0).toUpperCase() + option.slice(1)}
+        </MenuItem>
+      ))}
+    </Menu>
+
+
 
     <Dialog
   open={confirmOpen}

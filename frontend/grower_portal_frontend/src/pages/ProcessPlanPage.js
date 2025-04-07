@@ -394,7 +394,17 @@ const ProcessPlanPage = () => {
                               </Select>
                             ),
                           },
-                          { field: 'notes', headerName: 'Notes', editable: true }
+                          { field: 'notes', 
+                            headerName: 'Notes', 
+                            editable: true,
+                            flex: 1,
+                            width: 200,
+                            renderCell: (params) => (
+                                <div style={{ whiteSpace: "normal", wordWrap: "break-word", lineHeight: "1.4rem" }}>
+                                    {params.value}
+                                </div>
+                            )
+                         }
                       ]}
                     onReorder={handleReorder}
                     blockOption = {blocks}
