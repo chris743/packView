@@ -6,6 +6,14 @@ import { useGridApiRef } from '@mui/x-data-grid-pro';
 import {v4 as uuidv4} from 'uuid';
 import { WindowSharp } from "@mui/icons-material";
 
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
+
 
 const EditableTable = ({
   columns = [],
@@ -20,6 +28,7 @@ const EditableTable = ({
   const [rows, setRows] = useState(data || []);
   const [contextMenu, setContextMenu] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     setRows(data || []);
@@ -204,17 +213,6 @@ const EditableTable = ({
       <MenuItem
         onClick={() => {
           setContextMenu(null);
-          if (selectedRow?.id) {
-            onDelete?.(selectedRow);
-          }
-        }}
-      >
-        Delete Row
-      </MenuItem>
-
-      <MenuItem
-        onClick={() => {
-          setContextMenu(null);
           console.log(selectedRow);
           onViewDetails?.(selectedRow);
           
@@ -222,7 +220,45 @@ const EditableTable = ({
       >
         View Details
       </MenuItem>
+
+      <MenuItem
+        onClick={() => {
+          setContextMenu(null);
+          setConfirmOpen(true);
+        }}
+      >
+        Delete Row
+    </MenuItem>
     </Menu>
+
+    <Dialog
+  open={confirmOpen}
+  onClose={() => setConfirmOpen(false)}
+>
+  <DialogTitle>Confirm Delete</DialogTitle>
+  <DialogContent>
+    <DialogContentText>
+      Are you sure you want to delete this row? This action cannot be undone.
+    </DialogContentText>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setConfirmOpen(false)} color="primary">
+      Cancel
+    </Button>
+    <Button
+      onClick={() => {
+        setConfirmOpen(false);
+        if (selectedRow) {
+          onDelete?.(selectedRow);
+        }
+      }}
+      color="error"
+      variant="contained"
+    >
+      Delete
+    </Button>
+  </DialogActions>
+</Dialog>
     </>
   );
 };
