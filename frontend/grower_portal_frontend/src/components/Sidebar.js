@@ -25,6 +25,7 @@ import BuildIcon from '@mui/icons-material/Build';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
+import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -93,6 +94,12 @@ const Sidebar = () => {
                         <PrecisionManufacturingIcon />
                     </ListItemIcon>
                     {!isCollapsed && <ListItemText primary="Process Plan" />}
+                </ListItem>
+                <ListItem button component="a" href="/analysis/label-printing" sx={{ textDecoration: "none", color: "inherit" }}>
+                    <ListItemIcon>
+                        <BrandingWatermarkIcon />
+                    </ListItemIcon>
+                    {!isCollapsed && <ListItemText primary="Bin Labeling" />}
                 </ListItem>
 
                 {/* Dashboards Dropdown */}

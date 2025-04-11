@@ -179,4 +179,3 @@ class FieldContractorsSerializer(serializers.ModelSerializer):
     class Meta:
         model = FieldContractors
         fields = '__all__'
-

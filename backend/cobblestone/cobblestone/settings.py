@@ -56,6 +56,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ]
+}
+
+
 ALLOWED_HOSTS=['*']
 
 ROOT_URLCONF = 'cobblestone.urls'
@@ -90,9 +98,18 @@ DATABASES = {
         'PASSWORD': '!Cncamrts1',               # Replace with your PostgreSQL password
         'HOST': '192.168.128.30',                           # IP of your PostgreSQL server
         'PORT': '5432',                                     # Default PostgreSQL port
-    }
+    },
+    'scanner_db':{
+        'ENGINE': 'django.db.backends.postgresql',  # Use PostGIS engine
+        'NAME': 'Production_data',                       # Replace with your database name
+        'USER': 'chrism',                       # Replace with your PostgreSQL username
+        'PASSWORD': '!Cncamrts1',               # Replace with your PostgreSQL password
+        'HOST': '192.168.128.30',                           # IP of your PostgreSQL server
+        'PORT': '5432', 
+    },
 }
 
+DATABASE_ROUTERS = ['shed_analysis.database_router.BreezeRouter']
 
 
 # Password validation

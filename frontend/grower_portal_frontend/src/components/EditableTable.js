@@ -32,7 +32,6 @@ const EditableTable = ({
   const [density, setDensity] = useState(() => {
     return localStorage.getItem("tableDensity") || "compact";
   });
-  const [densityMenuAnchorEl, setDensityMenuAnchorEl] = useState(null);
   const [submenuOpen, setSubmenuOpen] = useState(false);
   const [submenuAnchorEl, setSubmenuAnchorEl] = useState(null);
 

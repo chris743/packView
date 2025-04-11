@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Sum, Avg, Max
@@ -37,7 +38,7 @@ def process_size_id(df):
     return df
 
 
-class BinInventoryView(APIView):
+class BinInventoryView(ModelViewSet):
     """
     View to fetch bin inventory data and associated records.
     """
@@ -76,7 +77,7 @@ class BinInventoryView(APIView):
         except Exception as e:
             logger.error(f"Error fetching bin inventory data: {e}")
             return Response({"error": "Failed to fetch bin inventory data."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-class AssociatedBinsView(APIView):
+class AssociatedBinsView(ModelViewSet):
     def get(self, request):
         # Get query parameters
         commodity = request.query_params.get('commodity')

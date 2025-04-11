@@ -53,3 +53,28 @@ class BinInventory(models.Model):
 
     def __str__(self):
         return f"Order {self.tag_id} ({self.commodity_id})"
+    
+class packs_completed(models.Model):
+    outlet = models.CharField(max_length=50, null=True, blank=True)
+    batch = models.CharField(max_length=50, null=True, blank=True)
+    payload = models.TextField(null=True, blank=True)
+    timestamp = models.CharField(max_length=50,null=False, blank=False, primary_key=True)
+    created = models.DateTimeField(auto_now_add=True, null=True, blank=True)  # Timestamp for when the record is created
+
+    class Meta:
+        managed = False  # No migrations will be created for this model
+        db_table = 'production"."packs_completed'  # Specify the name of the table in the database
+        app_label = 'packs-completed'  # Specify the app label for this model
+
+class scanned_tags(models.Model):
+    scanner_id = models.CharField(max_length=50, null=True, blank=True)
+    tag_id = models.CharField(max_length=50, null=True, blank=True)
+    block_id = models.CharField(max_length=50, null=True, blank=True)
+    pool_id = models.CharField(max_length=50, null=True, blank=True)
+    weight = models.FloatField(null=True, blank=True)
+    scanned_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)  # Timestamp for when the record is created
+
+    class Meta:
+        managed = False
+        db_table = 'production"."scanned_tags'
+        app_label = 'scanned-tags'

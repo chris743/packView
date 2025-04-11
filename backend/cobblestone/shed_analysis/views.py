@@ -1,18 +1,23 @@
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import CharField
-from .models import Orders
+from .models import Orders, packs_completed, scanned_tags
 from datetime import date
 from django.db.models import Q, F, Value, Sum, Avg
 from django.db.models.functions import Concat
 from datetime import date, timedelta
 import pandas as pd
 import re
+import json
 from zoneinfo import ZoneInfo
 from datetime import datetime, time
+from .serializers import PacksCompletedSerializer, ScannedTagsSerializer
+from rest_framework.viewsets import GenericViewSet
+from django.db.models import Max
 
-class CapacityGaugeView(APIView):
+class CapacityGaugeView(ModelViewSet):
     """
     API View to calculate and return capacities for giro, fox, vex, and bulk.
     """
@@ -123,8 +128,7 @@ class CapacityGaugeView(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
-
-class TopFiveThisWeek(APIView):
+class TopFiveThisWeek(ModelViewSet):
 
     """
     API View to return the top 5 products sold for each style (giro, fox, vex, bulk),
@@ -176,9 +180,8 @@ class TopFiveThisWeek(APIView):
             )
             result[style] = top_products
 
-        return Response(result, status=status.HTTP_200_OK)
-    
-class WeeklyStatsView(APIView):
+        return Response(result, status=status.HTTP_200_OK)   
+class WeeklyStatsView(ModelViewSet):
     """
     API View to return statistics for each style (giro, fox, vex, bulk):
     - Total order quantity today.
@@ -282,8 +285,7 @@ class WeeklyStatsView(APIView):
         stats = {style: calculate_stats(Orders.objects, style) for style in styles}
 
         return Response(stats, status=status.HTTP_200_OK)
-    
-class ChartDataView(APIView):
+class ChartDataView(ModelViewSet):
 
     """
     API View to return bar chart data:
@@ -354,9 +356,8 @@ class ChartDataView(APIView):
                 "bulk": bulk_data,
             },
             status=status.HTTP_200_OK,
-        )
-    
-class OrdersDashboardAPIView(APIView):
+        )   
+class OrdersDashboardAPIView(ModelViewSet):
     """
     APIView to provide data for the Orders Dashboard.
     """
@@ -459,3 +460,68 @@ class OrdersDashboardAPIView(APIView):
         
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+from django.db.models.functions import Substr
+class PacksCompletedView(ModelViewSet):
+    serializer_class = PacksCompletedSerializer
+
+    def get_queryset(self):
+        today_str = date.today().isoformat()
+        print("Today's date string:", today_str)
+
+        # Preview sample data
+        sample = packs_completed.objects.using('scanner_db').first()
+        print("Sample timestamp:", sample.timestamp if sample else "None")
+
+        return packs_completed.objects.using('scanner_db').filter(created__startswith=today_str)
+
+class ScannedTagsView(ModelViewSet):
+    serializer_class = ScannedTagsSerializer
+
+    def get_queryset(self):
+        today_str = date.today().isoformat()
+        print("Today's date string:", today_str)
+
+        # Preview sample data
+        sample = scanned_tags.objects.using('scanner_db').first()
+        print("Sample timestamp:", sample.scanned_at if sample else "None")
+
+        return scanned_tags.objects.using('scanner_db').filter(scanned_at__startswith=today_str)
+    
+class OutletVerificationStatusView(APIView):
+    def get(self, request):
+        # Get the latest entry for each outlet
+        latest_packs = packs_completed.objects.using('scanner_db').raw("""
+            SELECT DISTINCT ON (outlet) * 
+            FROM production.packs_completed 
+            ORDER BY outlet, created DESC
+        """)
+        
+
+        outlet_statuses = []
+
+        for pack in latest_packs:
+            try:
+                payload = json.loads(pack.payload)
+                pack_id = payload.get("EventArgs", {}).get("PackId")
+                block_id = payload.get("EventArgs", {}).get("UserData.Famous.GrowerBlockId")
+                commodity = payload.get("EventArgs", {}).get("UserData.Famous.Commodity")
+                size = payload.get("EventArgs", {}).get("UserData.Famous.Size")
+                grade = payload.get("EventArgs", {}).get("UserData.Famous.Grade")
+            except (json.JSONDecodeError, AttributeError):
+                pack_id = None
+
+            verified = scanned_tags.objects.using('scanner_db').filter(weight=pack_id).exists()
+
+            
+            outlet_statuses.append({
+                "outlet": pack.outlet,
+                "pack_id": pack_id,
+                "verified": verified,
+                "timestamp": pack.created,
+                "block_id": block_id,
+                "commodity": commodity,
+                "size": size,
+                "grade": grade,
+            })
+
+        return Response(outlet_statuses)
