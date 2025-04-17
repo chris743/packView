@@ -1,0 +1,142 @@
+/* Basic print styles for Process Plan */
+
+@media print {
+  /* Hide non-printable elements */
+  .no-print, 
+  .MuiAppBar-root,
+  .MuiIconButton-root:not(.print-button),
+  .MuiButton-root:not(.print-button) {
+    display: none !important;
+  }
+  
+  /* Basic page setup */
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+    font-family: Arial, sans-serif;
+    font-size: 12pt;
+    color: black;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Print container */
+  .print-container {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  
+  /* Header */
+  .print-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .print-header h2 {
+    margin: 0;
+    font-size: 20pt;
+  }
+  
+  .print-header p {
+    margin: 3px 0;
+    font-size: 10pt;
+    color: #333;
+  }
+  
+  /* Summary container */
+  .summary-container {
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 4px;
+  }
+  
+  .summary-container h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 14pt;
+  }
+  
+  /* Summary table */
+  .summary-table {
+    width: 50%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  
+  .summary-table td {
+    width: 15rem;
+    padding: 3px 3px 3px 0;
+    font-size: 10pt;
+  }
+  
+  /* Main data table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .data-table th {
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 11pt;
+  }
+  
+  .data-table td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    font-size: 10pt;
+  }
+  
+  .data-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  /* Table rows shouldn't break across pages */
+  .data-table tr {
+    page-break-inside: avoid;
+  }
+  
+  /* Footer */
+  .print-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8pt;
+    color: #777;
+    margin-top: 10px;
+  }
+}
+
+/* Only show the print container when printing */
+.print-container {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .print-container,
+  .print-container * {
+    visibility: visible;
+    position: static;
+  }
+  
+  .print-container {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+  }
+}

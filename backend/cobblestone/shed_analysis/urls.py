@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from shed_analysis.views import CapacityGaugeView, TopFiveThisWeek, WeeklyStatsView, ChartDataView, OrdersDashboardAPIView, PacksCompletedView, ScannedTagsView, OutletVerificationStatusView
 from shed_analysis.bin_inventory_views import BinInventoryView, AssociatedBinsView
+from shed_analysis.reportviews import average_packout_report
 
 router = DefaultRouter()
 router.register(r'packs-completed', PacksCompletedView, basename='packs-completed')
@@ -18,4 +19,5 @@ router.register(r'orders-dashboard', OrdersDashboardAPIView, basename='orders-da
 urlpatterns = [
     path("", include(router.urls)),
     path("outlet-dashboard/", OutletVerificationStatusView.as_view(), name="verification-status"),  # ✅ include your APIView here
+    path("reports/average-packout", average_packout_report, name="average-packout-report"),  # ✅ include your report view here
 ]

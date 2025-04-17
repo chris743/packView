@@ -38,7 +38,14 @@ const EditableTable = ({
 
 
   useEffect(() => {
-    setRows(data || []);
+    // Ensure data is sorted by row_order before setting rows
+    const sortedData = [...(data || [])].sort((a, b) => {
+      // Default to a large number if row_order is missing
+      const aOrder = a.row_order !== undefined ? a.row_order : 999999;
+      const bOrder = b.row_order !== undefined ? b.row_order : 999999;
+      return aOrder - bOrder;
+    });
+    setRows(sortedData);
   }, [data]);
 
   const apiRef = useGridApiRef();
@@ -69,15 +76,32 @@ const EditableTable = ({
       : []),
   ];
 
-  const handleRowOrderChange = () => {
-    const sortedIds = apiRef.current.getSortedRowIds(); // this gives the current visual order
-    const reorderedRows = sortedIds.map((id, index) => {
-      const row = rows.find((r) => r.id === id);
-      return { ...row, row_order: index };
-    });
-  
+  const handleRowOrderChange = (params) => {
+    // Get the new row order from the drag-and-drop action
+    const { targetIndex, oldIndex } = params;
+    console.log(`Row moved from index ${oldIndex} to index ${targetIndex}`);
+
+    // Create a copy of current rows
+    const updatedRows = [...rows];
+    
+    // Move the row from oldIndex to targetIndex
+    const [movedRow] = updatedRows.splice(oldIndex, 1);
+    updatedRows.splice(targetIndex, 0, movedRow);
+    
+    // Update row_order values for all rows
+    const reorderedRows = updatedRows.map((row, index) => ({
+      ...row,
+      row_order: index
+    }));
+    
+    // Update the rows state with the new order
     setRows(reorderedRows);
+    
+    // Call the onReorder callback if provided
     onReorder?.(reorderedRows);
+    
+    // Log the new order for debugging
+    console.log("New row order:", reorderedRows.map(r => ({ id: r.id, order: r.row_order })));
   };
 
   const importTagFile = async (row) => {
@@ -103,33 +127,31 @@ const EditableTable = ({
   const handleRowUpdate = async (newRow, oldRow) => {
     let updatedRow = { ...newRow };
   
-    // Detect status change to "In Process"
+    // Detect status change to "In Process" - just set time without prompting for batch
     if (
       newRow.run_status !== oldRow.run_status &&
-      newRow.run_status === "In process" &&
-      !newRow.batch
+      newRow.run_status === "In process"
     ) {
-      const batchInput = window.prompt("Enter batch number for this run:");
-      if (batchInput) {
-        updatedRow.batch_id = batchInput;
-        updatedRow.time_started = new Date().toISOString();
-      } else {
-        // Cancel update if no batch entered
-        return oldRow;
-      }
+      updatedRow.time_started = new Date().toISOString();
+      // No batch prompt - will be set by the auto-update mechanism
     }
 
+    // Detect status change to "Complete"
     if (
       newRow.run_status !== oldRow.run_status &&
-      newRow.run_status === "Complete" &&
-      !newRow.batch_id
+      newRow.run_status === "Complete"
     ) {
       updatedRow.time_completed = new Date().toISOString();
-      console.log(`Scheduling tag file import for batch: ${newRow.batch}`);
-      setTimeout(() => {
-      importTagFile(newRow); // 👈 define this function below
-    }, 10 * 60 * 1000); // 10 minutes in milliseconds
-  }
+      
+      // Only schedule tag import if we have a batch
+      if (updatedRow.batch_id) {
+        console.log(`Scheduling tag file import for batch: ${updatedRow.batch_id}`);
+        setTimeout(() => {
+          importTagFile(updatedRow);
+        }, 10 * 60 * 1000); // 10 minutes in milliseconds
+      }
+    }
+    
     try {
       await onSave(updatedRow);
       return updatedRow;
@@ -145,18 +167,26 @@ const EditableTable = ({
     <Button 
     variant="contained"
     color="primary"
+    data-testid="add-line-button"
     onClick={() => {
-      const newRow = { id: `temp-${uuidv4()}`, 
-        row_order: rows.length, 
+      // Create new row with highest row_order value (add to bottom)
+      const maxRowOrder = rows.length > 0 
+        ? Math.max(...rows.map(row => row.row_order !== undefined ? row.row_order : 0)) + 1 
+        : 0;
+      
+      const newRow = { 
+        id: `temp-${uuidv4()}`, 
+        row_order: maxRowOrder, 
+        run_date: new Date().toISOString().slice(0, 10), // Default to today or use selected date
         ...Object.fromEntries(columns.map((col) => [col.field, ""]))
       };
-      setRows((prevRows) => [newRow, ...prevRows]);
-
-      const reordered = [newRow, ...rows].map((row, index) => ({
-        ...row,
-        row_order: index,
+      
+      // Add new row to end of list, preserving sort order
+      setRows((prevRows) => [...prevRows, newRow].sort((a, b) => {
+        const aOrder = a.row_order !== undefined ? a.row_order : 999999;
+        const bOrder = b.row_order !== undefined ? b.row_order : 999999;
+        return aOrder - bOrder;
       }));
-      setRows(reordered);
     }}
     sx={{ m: 1 }}
   >
@@ -186,9 +216,32 @@ const EditableTable = ({
         onProcessRowUpdateError={(error) => console.error("Row update failed:", error)}
         getRowId={(row) => row.id}
         disableSelectionOnClick
+        disableColumnFilter={true}
         initialState={{
           sorting: {
             sortModel: [{ field: "row_order", sort: "asc" }],
+          },
+          columns: {
+            columnVisibilityModel: {
+              // Hide the ID column
+              id: false,
+            },
+          },
+        }}
+        components={{
+          Row: (props) => (
+            <div
+              {...props}
+              style={{
+                ...props.style,
+                cursor: 'move',
+              }}
+            />
+          ),
+        }}
+        sx={{
+          '& .MuiDataGrid-row': {
+            cursor: 'move',
           },
         }}
         slotProps={{

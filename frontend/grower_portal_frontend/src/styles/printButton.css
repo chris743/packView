@@ -1,0 +1,24 @@
+/* Styles for print button */
+.print-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  background-color: white !important;
+  color: #1976d2 !important;
+  border: 1px solid #1976d2 !important;
+  border-radius: 4px !important;
+  padding: 4px 10px !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  margin-right: 10px !important;
+}
+
+.print-button:hover {
+  background-color: rgba(25, 118, 210, 0.04) !important;
+}
+
+/* Hide the print button during printing */
+@media print {
+  .print-button {
+    display: none !important;
+  }
+}

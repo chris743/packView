@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Grid, Paper, Chip } from "@mui/material";
 import axios from "axios";
-import {editData, fetchChartData, fetchData} from "../api/api";
+import {editData, fetchChartData, fetchData, printerScannerData} from "../api/api";
+import DiagnosticsStatusButton from "../components/DiagnosticsStatusButton";
+import PrinterDiagnostics from "../components/PrinterDiagnostics";
 
 import ReusableTable from "../components/ReusableTable";
+import DiagnosticsModal from "../components/PrinterDiagnostics";
 
 const ScannerDashboardPage = () => {
     const [outletStatuses, setOutletStatuses] = useState([]);
     const [timeTick, setTimeTick] = useState(Date.now());
     const [runBanner, setRunBanner] = useState("");
     const [runplantoday, setRunplantoday] = useState([]);
+    const [modalIndex, setModalIndex] = useState(null);
+    const [diagnostics, setDiagnostics] = useState({scanners: {}, printers: {} });
 
     const today = new Date().toISOString().slice(0, 10);
 
@@ -135,14 +140,26 @@ const ScannerDashboardPage = () => {
         const interval = setInterval(() => {
           setTimeTick(Date.now());
         }, 1000);
-      
+
         // Cleanup intervals on unmount
         return () => {
           clearInterval(interval);
           clearInterval(dataInterval);
         };
       }, []); // only run once at mount
+
+      useEffect(() => {
+        const loadDiagnostics = async () => {
+          const data = await printerScannerData();
+          setDiagnostics(data);
+        };
       
+        loadDiagnostics();
+        const interval = setInterval(loadDiagnostics, 5000);
+        return () => clearInterval(interval);
+      }, []);
+      
+
       useEffect(() => {
         const sortedTags = [...outletStatuses]
           .filter((item) => item.pack_id)
@@ -156,10 +173,7 @@ const ScannerDashboardPage = () => {
           previousTag?.block_id &&
           currentTag.block_id !== previousTag.block_id;
       
-        console.log("Block changed:", blockChanged);
         if (!blockChanged) return;
-
-        console.log("Block changed, checking run plan...");
       
         const checkRunPlan = async () => {
           try {
@@ -242,6 +256,8 @@ const ScannerDashboardPage = () => {
         const crane = craneStatuses.find(c => c.crane === group.crane);
         return (
         <Grid item xs={12} sm={6} md={3} key={group.crane}>
+          <Box sx={{position: "relative"}}>
+
             <Paper
             sx={{
                 padding: 2,
@@ -262,34 +278,43 @@ const ScannerDashboardPage = () => {
                     : "#ffe6e6",
             }}
             >
-            <Typography variant="h6">{crane?.crane}</Typography>
-            <Typography variant="body2">
-                <strong>Last Outlet:</strong> {crane?.lastOutlet}
-            </Typography>
-            <Typography variant="body2">
-                <strong>Time Since:</strong> {timeSince(crane?.lastScanTime)}
-            </Typography>
+              <Typography variant="h6">{crane?.crane}</Typography>
+              <Typography variant="body2"><strong>Last Outlet:</strong> {crane?.lastOutlet}</Typography>
+              <Typography variant="body2"><strong>Time Since:</strong> {timeSince(crane?.lastScanTime)}</Typography>
+              
+              {diagnostics?.scanners && diagnostics?.printers && (
+                <DiagnosticsStatusButton
+                  index={Number(group.crane.slice(-1)) - 1}
+                  scannerId={`crane_${group.crane.slice(-1)}`}
+                  printerId={`printer_${group.crane.slice(-1)}`}
+                  scanner={diagnostics.scanners[`crane_${group.crane.slice(-1)}`]}
+                  printer={diagnostics.printers[`printer_${group.crane.slice(-1)}`]}
+                  onClick={setModalIndex}
+                />
+              )}
             </Paper>
+            </Box>
 
             {/* Horizontally render outlets */}
             <Grid container spacing={1}>
             {group.outlets.map((item) => (
                 <Grid item xs={2.4} key={item.outlet}> {/* 5 boxes = 5 * 2.4 = 12 */}
-                <Paper
-                    sx={{
-                    padding: 1,
-                    color: "black",
-                    borderLeft: `4px solid ${item.verified ? "green" : "red"}`,
-                    backgroundColor: item.verified ? "#e6ffed" : "#ffe6e6",
-                    height: "100%",
-                    }}
-                >
-                    <Typography variant="subtitle2">{item.outlet}</Typography>
-                    <Typography variant="caption">
-                    {item.size} {item.grade}
-                    </Typography>
-                </Paper>
+                  <Paper
+                      sx={{
+                      padding: 1,
+                      color: "black",
+                      borderLeft: `4px solid ${item.verified ? "green" : "red"}`,
+                      backgroundColor: item.verified ? "#e6ffed" : "#ffe6e6",
+                      height: "100%",
+                      }}
+                  >
+                      <Typography variant="subtitle2">{item.outlet}</Typography>
+                      <Typography variant="caption">
+                      {item.size} {item.grade}
+                      </Typography>
+                  </Paper>
                 </Grid>
+
             ))}
             </Grid>
         </Grid>
@@ -297,6 +322,11 @@ const ScannerDashboardPage = () => {
     })}
     </Grid>
     <ReusableTable columns={runplantablecolumns} data={runplantoday} actions={actions}/>
+    <PrinterDiagnostics
+      isOpen={modalIndex !== null}
+      onClose={() => setModalIndex(null)}
+      index={modalIndex}
+    />
 
     </Box>
     
