@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'grower_portal',
+    'grower_portal.feedback',
     'shed_analysis',
     'rest_framework',
     'sheduled_tasks',

@@ -130,3 +130,84 @@ export const printerScannerData = async () => {
     return { scanners: {}, printers: {} };
   }
 };
+
+// Feedback API functions
+export const fetchFeedback = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/feedback/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching feedback:", error);
+    throw new Error("Failed to fetch feedback");
+  }
+};
+
+export const createFeedback = async (feedbackData) => {
+  try {
+    const response = await axios.post(`${API_URL}/feedback/`, feedbackData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating feedback:", error);
+    throw new Error("Failed to create feedback");
+  }
+};
+
+export const updateFeedbackStatus = async (id, status) => {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/feedback/${id}/update_status/`,
+      { status }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating feedback status:", error);
+    throw new Error("Failed to update feedback status");
+  }
+};
+
+export const addFeedbackResponse = async (feedbackId, responseData) => {
+  try {
+    console.log(`Adding response to feedback ID ${feedbackId} with data:`, responseData);
+    
+    const response = await axios.post(
+      `${API_URL}/feedback/${feedbackId}/add_response/`,
+      responseData
+    );
+    
+    console.log('Response data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error adding feedback response through custom action:", error);
+    if (error.response) {
+      console.error("Error response data:", error.response.data);
+      console.error("Error status:", error.response.status);
+    } else if (error.request) {
+      console.error("No response received:", error.request);
+    } else {
+      console.error("Error message:", error.message);
+    }
+    
+    // Fallback to direct creation if the custom action fails
+    try {
+      console.log("Trying direct creation as fallback...");
+      const directData = {
+        ...responseData,
+        feedback: feedbackId
+      };
+      
+      const directResponse = await axios.post(
+        `${API_URL}/feedback-responses/`,
+        directData
+      );
+      
+      console.log('Direct response creation data:', directResponse.data);
+      
+      // Fetch the updated feedback to return consistent data format
+      const feedbackResponse = await axios.get(`${API_URL}/feedback/${feedbackId}/`);
+      return feedbackResponse.data;
+    } catch (fallbackError) {
+      console.error("Even fallback failed:", fallbackError);
+      throw fallbackError;
+    }
+  }
+};

@@ -16,6 +16,7 @@ from .views import (
     FieldContractorsViewSet,
     HarvestPlanDateViewSet,
 )
+from .feedback.views import FeedbackViewSet, FeedbackResponseViewSet
 
 router = DefaultRouter()
 router.register(r'growers', GrowerViewSet)
@@ -33,5 +34,7 @@ router.register(r'files', FileViewSet, basename='file')
 router.register(r'pools', PoolViewSet)
 router.register(r'field-contractors', FieldContractorsViewSet)
 router.register(r'planned-harvest-date', HarvestPlanDateViewSet)
+router.register(r'feedback', FeedbackViewSet)
+router.register(r'feedback-responses', FeedbackResponseViewSet)
 
 urlpatterns = router.urls

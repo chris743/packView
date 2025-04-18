@@ -21,14 +21,19 @@ import {
   MenuItem,
   Alert,
   IconButton,
-  useTheme
+  useTheme,
+  CircularProgress
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ReplayIcon from '@mui/icons-material/Replay';
-import { API_URL, fetchData, createData, editData } from '../api/api';
-import axios from 'axios';
+import { 
+  fetchFeedback, 
+  createFeedback, 
+  updateFeedbackStatus,
+  addFeedbackResponse
+} from '../api/api';
 
 /**
  * FeedbackPage component
@@ -40,6 +45,7 @@ const FeedbackPage = () => {
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackType, setFeedbackType] = useState('suggestion');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [currentFeedback, setCurrentFeedback] = useState(null);
   const [responseText, setResponseText] = useState('');
@@ -53,22 +59,18 @@ const FeedbackPage = () => {
     isAdmin: true // Toggle this to test admin vs. regular user view
   };
 
-  // Load feedback data
+  // Load feedback data from API
   const loadFeedback = async () => {
     try {
       setIsLoading(true);
+      setErrorMessage('');
       
-      // In a real implementation, this would fetch from your API
-      // For now, we'll use localStorage as a simple data store
-      const storedFeedback = localStorage.getItem('growerPortalFeedback');
-      const feedbackItems = storedFeedback ? JSON.parse(storedFeedback) : [];
+      // Fetch feedback data from the API
+      const feedbackData = await fetchFeedback();
+      console.log('Loaded feedback data:', feedbackData);
       
-      // Sort by date descending (newest first)
-      const sortedFeedback = feedbackItems.sort((a, b) => 
-        new Date(b.created_at) - new Date(a.created_at)
-      );
-      
-      setFeedback(sortedFeedback);
+      // Set feedback state
+      setFeedback(feedbackData);
     } catch (error) {
       console.error('Error loading feedback:', error);
       setErrorMessage('Failed to load feedback items. Please try again later.');
@@ -83,36 +85,36 @@ const FeedbackPage = () => {
   }, []);
   
   // Handle submitting new feedback
-  const handleSubmitFeedback = () => {
+  const handleSubmitFeedback = async () => {
     if (!feedbackText.trim()) {
       setErrorMessage('Please enter your feedback before submitting.');
       return;
     }
     
     try {
-      // Create new feedback item
-      const newFeedback = {
-        id: Date.now(), // Simple ID generation for demo
-        user_id: currentUser.id,
+      setIsSubmitting(true);
+      setErrorMessage('');
+      
+      // Create feedback data object
+      const feedbackData = {
+        user_id: currentUser.id.toString(),
         user_name: currentUser.name,
         content: feedbackText,
         type: feedbackType,
-        status: 'open',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        responses: []
+        status: 'open'
       };
       
-      // Add to existing feedback
-      const updatedFeedback = [newFeedback, ...feedback];
+      console.log('Submitting feedback:', feedbackData);
       
-      // Save to localStorage (in production, you would save to your API)
-      localStorage.setItem('growerPortalFeedback', JSON.stringify(updatedFeedback));
+      // Send to API
+      await createFeedback(feedbackData);
       
-      // Update state
-      setFeedback(updatedFeedback);
+      // Clear form and show success message
       setFeedbackText('');
       setSuccessMessage('Your feedback has been submitted successfully!');
+      
+      // Reload feedback to include the new item
+      await loadFeedback();
       
       // Clear success message after 5 seconds
       setTimeout(() => {
@@ -121,6 +123,8 @@ const FeedbackPage = () => {
     } catch (error) {
       console.error('Error submitting feedback:', error);
       setErrorMessage('Failed to submit feedback. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -139,41 +143,35 @@ const FeedbackPage = () => {
   };
   
   // Submit a response to feedback
-  const handleSubmitResponse = () => {
+  const handleSubmitResponse = async () => {
     if (!responseText.trim()) {
       setErrorMessage('Please enter a response before submitting.');
       return;
     }
     
     try {
-      // Create new response
-      const newResponse = {
-        id: Date.now(),
-        user_id: currentUser.id,
+      setIsSubmitting(true);
+      setErrorMessage('');
+      
+      // Prepare response data
+      const responseData = {
+        user_id: currentUser.id.toString(),
         user_name: currentUser.name,
         content: responseText,
-        created_at: new Date().toISOString()
+        response: responseText // Include both fields for compatibility
       };
       
-      // Update the current feedback with the new response
-      const updatedFeedback = feedback.map(item => {
-        if (item.id === currentFeedback.id) {
-          return {
-            ...item,
-            responses: [...item.responses, newResponse],
-            updated_at: new Date().toISOString()
-          };
-        }
-        return item;
-      });
+      console.log('Submitting response:', responseData);
       
-      // Save to localStorage
-      localStorage.setItem('growerPortalFeedback', JSON.stringify(updatedFeedback));
+      // Send response to API
+      await addFeedbackResponse(currentFeedback.id, responseData);
       
-      // Update state
-      setFeedback(updatedFeedback);
+      // Show success message
       setSuccessMessage('Response added successfully!');
+      
+      // Close dialog and reload feedback
       handleCloseDialog();
+      await loadFeedback();
       
       // Clear success message after 5 seconds
       setTimeout(() => {
@@ -182,30 +180,22 @@ const FeedbackPage = () => {
     } catch (error) {
       console.error('Error submitting response:', error);
       setErrorMessage('Failed to submit response. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
   // Update feedback status (open/closed)
-  const handleUpdateStatus = (feedbackId, newStatus) => {
+  const handleUpdateStatus = async (feedbackId, newStatus) => {
     try {
-      // Update the feedback status
-      const updatedFeedback = feedback.map(item => {
-        if (item.id === feedbackId) {
-          return {
-            ...item,
-            status: newStatus,
-            updated_at: new Date().toISOString()
-          };
-        }
-        return item;
-      });
+      // Send status update to API
+      await updateFeedbackStatus(feedbackId, newStatus);
       
-      // Save to localStorage
-      localStorage.setItem('growerPortalFeedback', JSON.stringify(updatedFeedback));
-      
-      // Update state
-      setFeedback(updatedFeedback);
+      // Show success message
       setSuccessMessage(`Feedback marked as ${newStatus}!`);
+      
+      // Reload feedback data
+      await loadFeedback();
       
       // Clear success message after 5 seconds
       setTimeout(() => {
@@ -272,6 +262,7 @@ const FeedbackPage = () => {
               value={feedbackType}
               label="Type"
               onChange={(e) => setFeedbackType(e.target.value)}
+              disabled={isSubmitting}
             >
               <MenuItem value="suggestion">Suggestion</MenuItem>
               <MenuItem value="bug">Bug Report</MenuItem>
@@ -288,15 +279,16 @@ const FeedbackPage = () => {
             value={feedbackText}
             onChange={(e) => setFeedbackText(e.target.value)}
             sx={{ mb: 2 }}
+            disabled={isSubmitting}
           />
           
           <Button 
             variant="contained" 
-            endIcon={<SendIcon />}
+            endIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
             onClick={handleSubmitFeedback}
-            disabled={!feedbackText.trim()}
+            disabled={!feedbackText.trim() || isSubmitting}
           >
-            Submit Feedback
+            {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
           </Button>
         </Box>
       </Paper>
@@ -307,7 +299,9 @@ const FeedbackPage = () => {
       </Typography>
       
       {isLoading ? (
-        <Typography>Loading feedback...</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+        </Box>
       ) : feedback.length > 0 ? (
         <List>
           {feedback.map((item) => (
@@ -324,7 +318,7 @@ const FeedbackPage = () => {
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Box>
                       <Chip 
-                        label={item.type.charAt(0).toUpperCase() + item.type.slice(1)} 
+                        label={item.type?.charAt(0).toUpperCase() + item.type?.slice(1) || 'Unknown'} 
                         color={getTypeColor(item.type)}
                         size="small"
                         sx={{ mr: 1 }}
@@ -378,7 +372,7 @@ const FeedbackPage = () => {
                   </Typography>
                   
                   <Typography variant="caption" color="text.secondary">
-                    Submitted by {item.user_name} on {formatDate(item.created_at)}
+                    Submitted by {item.user_name || 'Anonymous'} on {formatDate(item.created_at)}
                   </Typography>
                   
                   {/* Responses Section */}
@@ -394,7 +388,7 @@ const FeedbackPage = () => {
                             {response.content}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            Response from {response.user_name} on {formatDate(response.created_at)}
+                            Response from {response.user_name || 'Staff'} on {formatDate(response.created_at)}
                           </Typography>
                         </Box>
                       ))}
@@ -427,7 +421,7 @@ const FeedbackPage = () => {
                 {currentFeedback.content}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                From {currentFeedback.user_name} on {formatDate(currentFeedback.created_at)}
+                From {currentFeedback.user_name || 'Anonymous'} on {formatDate(currentFeedback.created_at)}
               </Typography>
             </Paper>
           )}
@@ -443,16 +437,18 @@ const FeedbackPage = () => {
             rows={4}
             value={responseText}
             onChange={(e) => setResponseText(e.target.value)}
+            disabled={isSubmitting}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog} disabled={isSubmitting}>Cancel</Button>
           <Button 
             onClick={handleSubmitResponse}
             variant="contained"
-            disabled={!responseText.trim()}
+            disabled={!responseText.trim() || isSubmitting}
+            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            Submit Response
+            {isSubmitting ? 'Submitting...' : 'Submit Response'}
           </Button>
         </DialogActions>
       </Dialog>
