@@ -6,7 +6,6 @@ frontend/grower_portal_frontend/dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-frontend/grower_portal_frontend/package-lock.json
 yarn.lock
 
 # Python
