@@ -18,6 +18,7 @@ const PrintableTable = React.forwardRef(({ data, columns, date, summary }, ref) 
   const printColumns = columns.filter(col => 
     !['actions', 'row_order', 'run_status'].includes(col.field) && col.field !== ''
   );
+  console.log(data);
   
   return (
     <div className="print-container" ref={ref}>
@@ -67,15 +68,17 @@ const PrintableTable = React.forwardRef(({ data, columns, date, summary }, ref) 
           </tr>
         </thead>
         <tbody>
-          {data.map((row) => (
-            <tr key={row.id}>
-              {printColumns.map((column) => (
-                <td key={`${row.id}-${column.field}`}>
-                  {renderCellValue(row, column)}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {[...data]
+            .sort((a, b) => (a.row_order ?? 9999) - (b.row_order ?? 9999))
+            .map((row) => (
+              <tr key={row.id}>
+                {printColumns.map((column) => (
+                  <td key={`${row.id}-${column.field}`}>
+                    {renderCellValue(row, column)}
+                  </td>
+                ))}
+              </tr>
+            ))}
         </tbody>
       </table>
       

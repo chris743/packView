@@ -26,6 +26,7 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 import SettingsIcon from '@mui/icons-material/Settings';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -150,6 +151,13 @@ const Sidebar = () => {
                         </ListItem>
                     </List>
                 </Collapse>
+                <ListItem button component="a" href="/feedback" sx={{ textDecoration: "none", color: "inherit" }}>
+                    <ListItemIcon>
+                        <FeedbackIcon />
+                    </ListItemIcon>
+                    {!isCollapsed && <ListItemText primary="Feedback" />}
+                </ListItem>
+                
                 <ListItem button component="a" href="/settings" sx={{ textDecoration: "none", color: "inherit" }}>
                     <ListItemIcon>
                         <SettingsIcon />

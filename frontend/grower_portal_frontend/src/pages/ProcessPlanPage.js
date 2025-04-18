@@ -165,6 +165,8 @@ const ProcessPlanPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [allRunData, setAllRunData] = useState([]);
   const [viewMode, setViewMode] = useState('daily'); // 'daily' or 'weekly'
+  const [inputValue, setInputValue] = React.useState('');
+
   // No need for print modal state anymore with the simpler approach
   const navigate = useNavigate();
 
@@ -433,12 +435,41 @@ const ProcessPlanPage = () => {
       renderEditCell: (params) => {
         const selectedId = params.value || "";
         const selectedBlock = blocks.find(b => String(b.block_id) === String(selectedId));
+
+        const handleBlur = () => {
+          if (!selectedBlock && blocks.length > 0) {
+            const match = blocks.find(option =>
+              `${option.block_id} — ${option.name} — ${option["ranch.grower.name"]}`
+                .toLowerCase()
+                .includes(inputValue.toLowerCase())
+            );
+      
+            if (match) {
+              params.api.setEditCellValue({
+                id: params.id,
+                field: "grower_block.block_id",
+                value: match.block_id,
+              });
+      
+              params.api.updateRows([{
+                ...params.row,
+                "grower_block.block_id": match.block_id,
+                "grower_block.name": match.name,
+                "grower_block.ranch.name": match["ranch.name"],
+                "grower_block.ranch.grower.name": match["ranch.grower.name"],
+                "grower_block.variety.id": match["variety.id"],
+                "grower_block.variety.commodity.id": match["variety.commodity.id"],
+              }]);
+            }
+          }
+        };
     
         return (
           <Autocomplete
             fullWidth
             size="small"
             options={blocks}
+            onBlur={handleBlur}
             getOptionLabel={(option) =>
               `${option.block_id} — ${option.name} — ${option["ranch.grower.name"]}`
             }
